@@ -30,7 +30,7 @@ export default function Navbar() {
       <nav className="mx-auto flex max-w-6xl items-center justify-between p-4">
         {/* Brand */}
         <Link href="/" className="text-lg font-bold">
-          TurnPro
+          mebo
         </Link>
 
         {/* Desktop links */}
