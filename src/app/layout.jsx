@@ -9,7 +9,7 @@ const inter = Inter({
   variable: "--font-inter",
 });
 
-export const metadata = { title: "TurnPro" };
+export const metadata = { title: "mebo" };
 
 export default function RootLayout({ children }) {
   return (
