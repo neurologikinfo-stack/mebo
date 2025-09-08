@@ -1,0 +1,10 @@
+| Rol                       | Descripción breve                                     | Permisos principales                                                                |
+| ------------------------- | ----------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| **Owner**                 | Dueño de un negocio/propiedad                         | Crear/editar/borrar sus negocios, ver estadísticas, asignar staff, ver clientes     |
+| **Customer**              | Usuario final (ej: arrendatario, comprador)           | Ver propiedades/servicios, reservar/comprar, dejar reseñas, actualizar su perfil    |
+| **Staff**                 | Personal operativo                                    | Ver y gestionar negocios asignados por el Owner, atender clientes, registrar tareas |
+| **Agent**                 | Representante o intermediario (opcional)              | Similar a Staff, pero vinculado directamente a clientes o propiedades específicas   |
+| **User**                  | Rol genérico (default al registrarse)                 | Ver contenido básico, actualizar perfil, solicitar acceso a rol superior            |
+| **Admin**                 | Admin de la plataforma                                | Gestionar todos los usuarios, roles, propiedades y configuraciones globales         |
+| **SuperAdmin** (opcional) | Solo si manejas multi-tenant o varios clientes (SaaS) | Todo lo que hace un Admin + controlar Owners, planes de suscripción, billing        |
+| **Moderator** (opcional)  | Solo si necesitas control de contenido                | Revisar y aprobar contenido generado por usuarios, reportes, comentarios            |

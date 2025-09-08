@@ -1,0 +1,202 @@
+[
+  {
+    "schemaname": "public",
+    "tablename": "appointments",
+    "policyname": "dev read appts",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "SELECT",
+    "qual": "true",
+    "with_check": null
+  },
+  {
+    "schemaname": "public",
+    "tablename": "appointments",
+    "policyname": "dev update appts",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "UPDATE",
+    "qual": "true",
+    "with_check": "true"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "appointments",
+    "policyname": "dev write appts",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "INSERT",
+    "qual": null,
+    "with_check": "true"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "businesses",
+    "policyname": "dev read businesses",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "SELECT",
+    "qual": "true",
+    "with_check": null
+  },
+  {
+    "schemaname": "public",
+    "tablename": "businesses",
+    "policyname": "public read businesses",
+    "permissive": "PERMISSIVE",
+    "roles": "{anon}",
+    "cmd": "SELECT",
+    "qual": "true",
+    "with_check": null
+  },
+  {
+    "schemaname": "public",
+    "tablename": "customers",
+    "policyname": "dev read customers",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "SELECT",
+    "qual": "true",
+    "with_check": null
+  },
+  {
+    "schemaname": "public",
+    "tablename": "customers",
+    "policyname": "dev write customers",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "INSERT",
+    "qual": null,
+    "with_check": "true"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "profiles",
+    "policyname": "cada usuario puede actualizar su perfil excepto role",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "UPDATE",
+    "qual": "((auth.uid())::text = clerk_id)",
+    "with_check": "((auth.uid())::text = clerk_id)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "profiles",
+    "policyname": "cada usuario puede ver su perfil",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "SELECT",
+    "qual": "((auth.uid())::text = clerk_id)",
+    "with_check": null
+  },
+  {
+    "schemaname": "public",
+    "tablename": "profiles",
+    "policyname": "read_own_profile",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "SELECT",
+    "qual": "((auth.uid())::text = clerk_id)",
+    "with_check": null
+  },
+  {
+    "schemaname": "public",
+    "tablename": "profiles",
+    "policyname": "solo admin puede cambiar role",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "UPDATE",
+    "qual": "((auth.jwt() ->> 'role'::text) = 'admin'::text)",
+    "with_check": "true"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "profiles",
+    "policyname": "solo admin puede cambiar roles",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "UPDATE",
+    "qual": "((auth.jwt() ->> 'role'::text) = 'admin'::text)",
+    "with_check": "((auth.jwt() ->> 'role'::text) = 'admin'::text)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "profiles",
+    "policyname": "update_own_profile",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "UPDATE",
+    "qual": "((auth.uid())::text = clerk_id)",
+    "with_check": null
+  },
+  {
+    "schemaname": "public",
+    "tablename": "role_changes",
+    "policyname": "admin can delete role changes",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "DELETE",
+    "qual": "((auth.jwt() ->> 'role'::text) = 'admin'::text)",
+    "with_check": null
+  },
+  {
+    "schemaname": "public",
+    "tablename": "role_changes",
+    "policyname": "admin can modify role changes",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "UPDATE",
+    "qual": "((auth.jwt() ->> 'role'::text) = 'admin'::text)",
+    "with_check": "((auth.jwt() ->> 'role'::text) = 'admin'::text)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "role_changes",
+    "policyname": "service role can insert role changes",
+    "permissive": "PERMISSIVE",
+    "roles": "{service_role}",
+    "cmd": "INSERT",
+    "qual": null,
+    "with_check": "true"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "roles",
+    "policyname": "Allow admins full access",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "ALL",
+    "qual": "(EXISTS ( SELECT 1\n   FROM profiles p\n  WHERE ((p.clerk_id = (auth.uid())::text) AND (p.role = 'admin'::text))))",
+    "with_check": null
+  },
+  {
+    "schemaname": "public",
+    "tablename": "schedules",
+    "policyname": "dev read schedules",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "SELECT",
+    "qual": "true",
+    "with_check": null
+  },
+  {
+    "schemaname": "public",
+    "tablename": "services",
+    "policyname": "dev read services",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "SELECT",
+    "qual": "true",
+    "with_check": null
+  },
+  {
+    "schemaname": "public",
+    "tablename": "staff",
+    "policyname": "dev read staff",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "SELECT",
+    "qual": "true",
+    "with_check": null
+  }
+]
