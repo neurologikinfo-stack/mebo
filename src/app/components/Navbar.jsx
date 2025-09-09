@@ -25,7 +25,7 @@ export default function Navbar() {
       ? "text-black font-semibold"
       : "text-gray-600 hover:text-black";
 
-  // Determinar ruta del dashboard según rol
+  // Ruta del dashboard según rol
   const dashboardPath =
     role === "admin"
       ? "/dashboard/admin"
@@ -61,12 +61,12 @@ export default function Navbar() {
         {/* Desktop actions */}
         <div className="hidden md:flex items-center gap-3 min-w-[200px] justify-end">
           <SignedOut>
-            <SignInButton mode="modal">
+            <SignInButton mode="modal" afterSignInUrl="/redirect">
               <button className="rounded-lg border px-3 py-1.5 text-sm hover:bg-gray-50">
                 Ingresar
               </button>
             </SignInButton>
-            <SignUpButton mode="modal">
+            <SignUpButton mode="modal" afterSignUpUrl="/redirect">
               <button className="rounded-lg bg-black px-3 py-1.5 text-sm text-white hover:bg-black/90">
                 Crear cuenta
               </button>
@@ -90,7 +90,6 @@ export default function Navbar() {
               </Link>
             )}
 
-            {/* UserButton de Clerk */}
             <div className="w-8 h-8 flex items-center justify-center">
               <UserButton afterSignOutUrl="/" userProfileMode="navigation" />
             </div>
@@ -123,12 +122,12 @@ export default function Navbar() {
             )}
 
             <SignedOut>
-              <SignInButton mode="modal">
+              <SignInButton mode="modal" afterSignInUrl="/redirect">
                 <button className="rounded-lg border px-3 py-1.5 text-sm hover:bg-gray-50 w-full text-left">
                   Ingresar
                 </button>
               </SignInButton>
-              <SignUpButton mode="modal">
+              <SignUpButton mode="modal" afterSignUpUrl="/redirect">
                 <button className="rounded-lg bg-black px-3 py-1.5 text-sm text-white hover:bg-black/90 w-full text-left">
                   Crear cuenta
                 </button>
