@@ -16,7 +16,7 @@ export default function CustomerProfilePage() {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
 
-  // Cargar perfil
+  // ✅ Cargar perfil desde Supabase
   useEffect(() => {
     if (!user) return;
 
@@ -26,7 +26,7 @@ export default function CustomerProfilePage() {
       const { data, error } = await supabase
         .from("profiles")
         .select("full_name, email, phone, avatar_url")
-        .eq("clerk_id", user.id)
+        .eq("clerk_id", `${user.id}`) // 👈 aseguramos string
         .maybeSingle();
 
       if (!error && data) {
@@ -49,20 +49,23 @@ export default function CustomerProfilePage() {
     })();
   }, [user]);
 
-  // Guardar cambios
+  // ✅ Guardar cambios de perfil
   async function handleSave(e) {
     e.preventDefault();
     if (!user) return;
 
     setSaving(true);
 
-    const { error } = await supabase.from("profiles").upsert({
-      clerk_id: user.id,
-      full_name: profile.full_name,
-      email: profile.email,
-      phone: profile.phone,
-      avatar_url: profile.avatar_url,
-    });
+    const { error } = await supabase.from("profiles").upsert(
+      {
+        clerk_id: user.id,
+        full_name: profile.full_name,
+        email: profile.email,
+        phone: profile.phone,
+        avatar_url: profile.avatar_url,
+      },
+      { onConflict: "clerk_id" }
+    );
 
     setSaving(false);
 
@@ -75,7 +78,7 @@ export default function CustomerProfilePage() {
     setTimeout(() => setMessage(""), 4000);
   }
 
-  // Subir avatar
+  // ✅ Subir avatar a Supabase Storage
   async function handleAvatarUpload(e) {
     const file = e.target.files[0];
     if (!file || !user) return;
@@ -83,15 +86,12 @@ export default function CustomerProfilePage() {
     const fileExt = file.name.split(".").pop();
     const filePath = `${user.id}/avatar.${fileExt}`;
 
-    // Eliminar si ya existe
-    await supabase.storage.from("avatars").remove([filePath]);
-
     // Subir archivo
     const { error: uploadError } = await supabase.storage
       .from("avatars")
       .upload(filePath, file, {
         cacheControl: "3600",
-        upsert: true, // ✅ permite reemplazar
+        upsert: true, // 👈 sobreescribe si ya existe
       });
 
     if (uploadError) {
@@ -104,17 +104,16 @@ export default function CustomerProfilePage() {
       data: { publicUrl },
     } = supabase.storage.from("avatars").getPublicUrl(filePath);
 
-    // Guardar en estado y en BD
-    setProfile((prev) => ({ ...prev, avatar_url: publicUrl }));
-
+    // Guardar en DB
     const { error } = await supabase
       .from("profiles")
       .update({ avatar_url: publicUrl })
       .eq("clerk_id", user.id);
 
     if (error) {
-      setMessage("❌ Error al guardar avatar");
+      setMessage("❌ Error al guardar avatar en BD");
     } else {
+      setProfile((prev) => ({ ...prev, avatar_url: publicUrl }));
       setMessage("✅ Avatar actualizado");
     }
   }
