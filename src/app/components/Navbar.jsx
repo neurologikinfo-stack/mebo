@@ -35,6 +35,16 @@ export default function Navbar() {
       ? "/dashboard/owner"
       : null;
 
+  // Texto dinámico según el rol
+  const dashboardLabel =
+    role === "customer"
+      ? "Mis citas"
+      : role === "owner"
+      ? "Panel de negocios"
+      : role === "admin"
+      ? "Dashboard"
+      : null;
+
   return (
     <header className="border-b bg-white">
       <nav className="mx-auto flex max-w-6xl items-center justify-between p-4">
@@ -117,7 +127,7 @@ export default function Navbar() {
                 href={dashboardPath}
                 className={`text-sm ${isActive(dashboardPath)}`}
               >
-                Dashboard
+                {dashboardLabel}
               </Link>
             )}
 

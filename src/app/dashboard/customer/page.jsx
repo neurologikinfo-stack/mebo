@@ -3,20 +3,22 @@
 import { useEffect, useState } from "react";
 import { useUser } from "@clerk/nextjs";
 import { supabase } from "@/utils/supabase/client";
+import Link from "next/link";
 
 export default function CustomerDashboard() {
   const { user } = useUser();
-  const [appointments, setAppointments] = useState([]);
+  const [stats, setStats] = useState({
+    confirmed: 0,
+    pending: 0,
+    cancelled: 0,
+  });
   const [loading, setLoading] = useState(true);
-  const [err, setErr] = useState("");
-  const [message, setMessage] = useState(null);
 
   useEffect(() => {
     if (!user) return;
 
     (async () => {
       setLoading(true);
-      setErr("");
 
       const { data: customer } = await supabase
         .from("customers")
@@ -27,163 +29,84 @@ export default function CustomerDashboard() {
         .maybeSingle();
 
       if (!customer) {
-        setErr("No se encontró el cliente");
         setLoading(false);
         return;
       }
 
       const { data, error } = await supabase
         .from("appointments")
-        .select(
-          `id, starts_at, ends_at, status,
-           services(name), staff(name), businesses(name)`
-        )
-        .eq("customer_id", customer.id)
-        .order("starts_at", { ascending: false });
+        .select("status")
+        .eq("customer_id", customer.id);
 
-      if (error) {
-        setErr(error.message);
-        setAppointments([]);
-      } else {
-        setAppointments(data ?? []);
+      if (!error && data) {
+        const confirmed = data.filter((a) => a.status === "confirmed").length;
+        const pending = data.filter((a) => a.status === "pending").length;
+        const cancelled = data.filter((a) => a.status === "cancelled").length;
+
+        setStats({ confirmed, pending, cancelled });
       }
+
       setLoading(false);
     })();
   }, [user]);
 
-  // Mensaje auto-cierre
-  useEffect(() => {
-    if (message) {
-      const timer = setTimeout(() => setMessage(null), 3000);
-      return () => clearTimeout(timer);
-    }
-  }, [message]);
-
-  async function handleStatusChange(a, newStatus) {
-    const ok = confirm(
-      `¿Seguro que quieres ${
-        newStatus === "reschedule"
-          ? "reprogramar"
-          : `cambiar la cita a '${newStatus}'`
-      }?`
-    );
-    if (!ok) return;
-
-    if (newStatus === "reschedule") {
-      window.location.href = `/reprogramar/${a.id}`;
-      return;
-    }
-
-    const res = await fetch("/api/customer/update-status", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        appointment_id: a.id,
-        status: newStatus,
-      }),
-    });
-
-    const data = await res.json();
-    if (data.success) {
-      setAppointments((prev) =>
-        prev.map((appt) =>
-          appt.id === a.id ? { ...appt, status: newStatus } : appt
-        )
-      );
-      setMessage({
-        type: "success",
-        text: `Estado actualizado a ${newStatus}`,
-      });
-    } else {
-      setMessage({ type: "error", text: data.error });
-    }
-  }
-
   return (
     <div className="space-y-8">
-      <h1 className="text-2xl font-bold text-gray-800">Mis citas</h1>
+      <h1 className="text-2xl font-bold text-gray-800">
+        Bienvenido {user?.firstName || "Cliente"}
+      </h1>
 
-      {message && (
-        <div
-          className={`p-3 rounded-lg text-sm ${
-            message.type === "success"
-              ? "bg-green-100 text-green-800"
-              : "bg-red-100 text-red-800"
-          }`}
-        >
-          {message.text}
+      {/* KPIs */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+        <div className="p-6 bg-white rounded-xl shadow border">
+          <h2 className="text-sm font-medium text-gray-500">
+            Citas confirmadas
+          </h2>
+          <p className="text-2xl font-semibold text-green-600">
+            {loading ? "…" : stats.confirmed}
+          </p>
         </div>
-      )}
+        <div className="p-6 bg-white rounded-xl shadow border">
+          <h2 className="text-sm font-medium text-gray-500">
+            Citas pendientes
+          </h2>
+          <p className="text-2xl font-semibold text-yellow-600">
+            {loading ? "…" : stats.pending}
+          </p>
+        </div>
+        <div className="p-6 bg-white rounded-xl shadow border">
+          <h2 className="text-sm font-medium text-gray-500">
+            Citas canceladas
+          </h2>
+          <p className="text-2xl font-semibold text-gray-500">
+            {loading ? "…" : stats.cancelled}
+          </p>
+        </div>
+      </div>
 
-      {/* Tabla de citas */}
+      {/* Accesos rápidos */}
       <div className="p-6 bg-white rounded-xl shadow border">
-        <h2 className="text-lg font-semibold mb-4">Últimas citas</h2>
-
-        {loading && <p>Cargando...</p>}
-        {err && <p className="text-red-600">{err}</p>}
-
-        <table className="min-w-full divide-y divide-gray-200 text-sm">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-4 py-3 text-left">Servicio</th>
-              <th className="px-4 py-3 text-left">Negocio</th>
-              <th className="px-4 py-3 text-left">Técnico</th>
-              <th className="px-4 py-3 text-left">Fecha</th>
-              <th className="px-4 py-3 text-left">Estado</th>
-              <th className="px-4 py-3 text-left">Acción</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-200">
-            {appointments.map((a) => (
-              <tr key={a.id}>
-                <td className="px-4 py-3">{a.services?.name}</td>
-                <td className="px-4 py-3">{a.businesses?.name}</td>
-                <td className="px-4 py-3">{a.staff?.name}</td>
-                <td className="px-4 py-3">
-                  {new Date(a.starts_at).toLocaleString()}
-                </td>
-                <td className="px-4 py-3">
-                  <span
-                    className={`px-3 py-1 rounded-full text-xs font-medium ${
-                      a.status === "confirmed"
-                        ? "bg-green-100 text-green-700"
-                        : a.status === "pending"
-                        ? "bg-yellow-100 text-yellow-700"
-                        : "bg-gray-200 text-gray-700"
-                    }`}
-                  >
-                    {a.status}
-                  </span>
-                </td>
-                <td className="px-4 py-3">
-                  <select
-                    defaultValue={a.status}
-                    onChange={(e) => handleStatusChange(a, e.target.value)}
-                    className="w-36 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm 
-             focus:outline-none"
-                  >
-                    {a.status === "cancelled" ? (
-                      <>
-                        <option value="cancelled">Cancelada</option>
-                        <option value="reschedule">Reprogramar</option>
-                      </>
-                    ) : (
-                      <>
-                        <option value="confirmed">Confirmada</option>
-                        <option value="pending">Pendiente</option>
-                        <option value="cancelled">Cancelar</option>
-                      </>
-                    )}
-                  </select>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-
-        {appointments.length === 0 && !loading && (
-          <p className="text-gray-500 mt-4">No tienes citas registradas.</p>
-        )}
+        <h2 className="text-lg font-semibold mb-4">Accesos rápidos</h2>
+        <div className="flex gap-4">
+          <Link
+            href="/dashboard/customer/appointments"
+            className="rounded-lg bg-blue-600 px-4 py-2 text-sm text-white shadow hover:bg-blue-500"
+          >
+            Ver mis citas
+          </Link>
+          <Link
+            href="/dashboard/customer/profile"
+            className="rounded-lg bg-gray-200 px-4 py-2 text-sm text-gray-700 hover:bg-gray-300"
+          >
+            Mi perfil
+          </Link>
+          <Link
+            href="/dashboard/customer/settings"
+            className="rounded-lg bg-gray-200 px-4 py-2 text-sm text-gray-700 hover:bg-gray-300"
+          >
+            Configuración
+          </Link>
+        </div>
       </div>
     </div>
   );
