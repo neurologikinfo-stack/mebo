@@ -8,7 +8,7 @@ import { supabase } from "@/utils/supabase/client";
 const PAGE_SIZE = 9;
 
 export default function Home() {
-  const { user } = useUser();
+  const { isLoaded, isSignedIn, user } = useUser();
   const userId = user?.id;
   const isAdmin = user?.publicMetadata?.role === "admin";
   const router = useRouter();
@@ -101,12 +101,14 @@ export default function Home() {
             Listado desde tu base de datos en Supabase.
           </p>
         </div>
-        <button
-          onClick={handleSync}
-          className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow hover:bg-blue-500"
-        >
-          Sincronizar Usuarios
-        </button>
+        {isLoaded && isSignedIn && isAdmin && (
+          <button
+            onClick={handleSync}
+            className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow hover:bg-blue-500"
+          >
+            Sincronizar Usuarios
+          </button>
+        )}
       </div>
 
       {syncMsg && (
@@ -155,7 +157,9 @@ export default function Home() {
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          router.push(`/admin/businesses/${b.id}/edit`);
+                          router.push(
+                            `/dashboard/admin/businesses/${b.id}/edit`
+                          );
                         }}
                         className="rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50"
                       >
@@ -253,7 +257,7 @@ function EmptyState({ hasQuery, clear }) {
           </button>
         ) : (
           <button
-            onClick={() => router.push("/admin/businesses/new")}
+            onClick={() => router.push("/dashboard/admin/businesses/new")}
             className="rounded-lg bg-black px-4 py-2 text-sm font-medium text-white shadow hover:bg-gray-800"
           >
             Crear negocio

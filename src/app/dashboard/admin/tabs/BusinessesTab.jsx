@@ -41,7 +41,7 @@ export default function BusinessesTab() {
                 Abrir
               </Link>
               <Link
-                href={`/admin/businesses/${b.id}/edit`}
+                href={`/dashboard/admin/businesses/${b.id}/edit`}
                 className="rounded border text-sm px-3 py-1 hover:bg-gray-50"
               >
                 Editar

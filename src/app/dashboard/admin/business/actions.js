@@ -55,7 +55,7 @@ export async function createBusiness(formData) {
 export async function createBusinessAction(prevState, formData) {
   const res = await createBusiness(formData);
   if (!res.ok) return { error: res.error };
-  redirect(`/admin/business/${res.id}/edit`); // ✅ corregido
+  redirect(`/dashboard/admin/business/${res.id}/edit`); // ✅ corregido
 }
 
 // ==========================

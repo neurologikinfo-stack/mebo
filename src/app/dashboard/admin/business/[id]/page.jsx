@@ -42,7 +42,7 @@ export default function BusinessDetailPage() {
 
       <div className="flex gap-4">
         <Link
-          href={`/admin/business/${business.id}/edit`}
+          href={`/dashboard/admin/business/${business.id}/edit`}
           className="px-4 py-2 rounded bg-blue-600 text-white text-sm shadow hover:bg-blue-500"
         >
           Editar

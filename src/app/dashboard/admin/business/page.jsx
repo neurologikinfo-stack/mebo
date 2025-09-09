@@ -18,7 +18,7 @@ export default async function BusinessListPage() {
       <div className="p-6 bg-white rounded-xl border shadow">
         <p className="text-gray-600">No hay negocios registrados todavía.</p>
         <Link
-          href="/admin/business/new"
+          href="/dashboard/admin/business/new"
           className="mt-4 inline-block rounded bg-blue-600 text-white px-4 py-2 text-sm"
         >
           Crear negocio
@@ -74,14 +74,14 @@ export default async function BusinessListPage() {
                 </td>
                 <td className="px-6 py-4 text-sm">
                   <Link
-                    href={`/admin/business/${b.id}`}
+                    href={`/dashboard/admin/business/${b.id}`}
                     className="text-blue-600 hover:underline"
                   >
                     Ver
                   </Link>{" "}
                   |{" "}
                   <Link
-                    href={`/admin/business/${b.id}/edit`}
+                    href={`/dashboard/admin/business/${b.id}/edit`}
                     className="text-gray-600 hover:underline"
                   >
                     Editar

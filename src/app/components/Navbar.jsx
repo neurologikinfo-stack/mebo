@@ -25,6 +25,16 @@ export default function Navbar() {
       ? "text-black font-semibold"
       : "text-gray-600 hover:text-black";
 
+  // Determinar ruta del dashboard según rol
+  const dashboardPath =
+    role === "admin"
+      ? "/dashboard/admin"
+      : role === "customer"
+      ? "/dashboard/customer"
+      : role === "owner"
+      ? "/dashboard/owner"
+      : null;
+
   return (
     <header className="border-b bg-white">
       <nav className="mx-auto flex max-w-6xl items-center justify-between p-4">
@@ -38,8 +48,11 @@ export default function Navbar() {
           <Link href="/" className={`text-sm ${isActive("/")}`}>
             Inicio
           </Link>
-          {role === "admin" && (
-            <Link href="/admin" className={`text-sm ${isActive("/admin")}`}>
+          {dashboardPath && (
+            <Link
+              href={dashboardPath}
+              className={`text-sm ${isActive(dashboardPath)}`}
+            >
               Dashboard
             </Link>
           )}
@@ -70,14 +83,14 @@ export default function Navbar() {
 
             {role === "admin" && (
               <Link
-                href="/admin/business/new"
+                href="/dashboard/admin/business/new"
                 className="rounded-lg bg-black px-3 py-1.5 text-sm text-white hover:bg-black/90"
               >
                 + Nuevo negocio
               </Link>
             )}
 
-            {/* ✅ Espacio reservado para UserButton */}
+            {/* UserButton de Clerk */}
             <div className="w-8 h-8 flex items-center justify-center">
               <UserButton afterSignOutUrl="/" userProfileMode="navigation" />
             </div>
@@ -100,8 +113,11 @@ export default function Navbar() {
             <Link href="/" className={`text-sm ${isActive("/")}`}>
               Inicio
             </Link>
-            {role === "admin" && (
-              <Link href="/admin" className={`text-sm ${isActive("/admin")}`}>
+            {dashboardPath && (
+              <Link
+                href={dashboardPath}
+                className={`text-sm ${isActive(dashboardPath)}`}
+              >
                 Dashboard
               </Link>
             )}
@@ -129,7 +145,7 @@ export default function Navbar() {
 
               {role === "admin" && (
                 <Link
-                  href="/admin/business/new"
+                  href="/dashboard/admin/business/new"
                   className="rounded-lg bg-black px-3 py-1.5 text-sm text-white hover:bg-black/90 text-center"
                 >
                   + Nuevo negocio

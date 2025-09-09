@@ -25,14 +25,14 @@ export default async function EditBusinessPage({ params }) {
     "use server";
     const res = await updateBusiness(b.id, formData);
     if (!res.ok) return { error: res.error };
-    redirect("/admin/business"); // ✅ corregido a singular
+    redirect("/dashboard/admin/business"); // ✅ corregido a singular
   }
 
   async function remove() {
     "use server";
     const res = await deleteBusiness(b.id);
     if (!res.ok) return { error: res.error };
-    redirect("/admin/business"); // ✅ corregido a singular
+    redirect("/dashboard/admin/business"); // ✅ corregido a singular
   }
 
   return (
@@ -60,7 +60,10 @@ export default async function EditBusinessPage({ params }) {
           <button className="rounded bg-black px-4 py-2 text-white">
             Guardar
           </button>
-          <Link href="/admin/business" className="rounded border px-4 py-2">
+          <Link
+            href="/dashboard/admin/business"
+            className="rounded border px-4 py-2"
+          >
             Cancelar
           </Link>
           <button

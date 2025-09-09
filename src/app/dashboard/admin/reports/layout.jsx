@@ -2,21 +2,21 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-export default function BusinessesLayout({ children }) {
+export default function ReportsLayout({ children }) {
   const pathname = usePathname();
 
   const navItems = [
-    { href: "/admin/business", label: "Listado" },
-    { href: "/admin/business/new", label: "Nuevo negocio" },
+    { href: "/dashboard/admin/reports", label: "Estadísticas" },
+    { href: "/dashboard/admin/reports/finance", label: "Finanzas" },
+    { href: "/dashboard/admin/reports/activity", label: "Actividad" },
   ];
 
   return (
     <div className="w-full">
-      {/* Encabezado de la sección Negocios */}
       <header className="mb-6 border-b pb-4">
-        <h1 className="text-3xl font-bold text-gray-800">Negocios</h1>
+        <h1 className="text-3xl font-bold text-gray-800">Reportes</h1>
         <p className="text-sm text-gray-600">
-          Administra todos los negocios desde este panel.
+          Consulta métricas y datos del sistema.
         </p>
 
         <nav className="mt-4 flex gap-4 text-sm">
@@ -36,7 +36,6 @@ export default function BusinessesLayout({ children }) {
         </nav>
       </header>
 
-      {/* Contenido dinámico de la sección */}
       <div>{children}</div>
     </div>
   );

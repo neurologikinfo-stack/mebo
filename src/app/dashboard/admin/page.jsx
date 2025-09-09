@@ -57,7 +57,7 @@ export default async function AdminHomePage() {
           ))}
         </ul>
         <Link
-          href="/admin/users"
+          href="/dashboard/admin/users"
           className="mt-3 inline-block text-blue-600 text-sm hover:underline"
         >
           Ver todos →
@@ -78,7 +78,7 @@ export default async function AdminHomePage() {
           ))}
         </ul>
         <Link
-          href="/admin/business"
+          href="/dashboard/admin/business"
           className="mt-3 inline-block text-blue-600 text-sm hover:underline"
         >
           Ver todos →

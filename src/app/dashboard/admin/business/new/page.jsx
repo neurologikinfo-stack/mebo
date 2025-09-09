@@ -37,7 +37,10 @@ export default function NewBusinessPage() {
           >
             {isPending ? "Guardando…" : "Guardar"}
           </button>
-          <Link href="/admin/business" className="rounded border px-4 py-2">
+          <Link
+            href="/dashboard/admin/business"
+            className="rounded border px-4 py-2"
+          >
             Cancelar
           </Link>
         </div>
