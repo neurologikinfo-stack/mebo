@@ -1,32 +1,28 @@
-import { auth, currentUser } from "@clerk/nextjs/server";
-import { redirect } from "next/navigation";
+"use client";
 
-export default async function DashboardRedirectPage() {
-  const { userId, sessionId, sessionClaims } = auth();
-  console.log("🟢 auth() →", { userId, sessionId, sessionClaims });
+import { useEffect } from "react";
+import { useUser } from "@clerk/nextjs";
+import { useRouter } from "next/navigation";
 
-  if (!userId) {
-    console.log("❌ No hay sesión → redirigiendo a /sign-in");
-    redirect("/sign-in");
-  }
+export default function DashboardRedirectPage() {
+  const { user, isLoaded } = useUser();
+  const router = useRouter();
 
-  const user = await currentUser();
-  console.log("🟢 currentUser() →", {
-    id: user?.id,
-    email: user?.primaryEmailAddress?.emailAddress,
-    role: user?.publicMetadata?.role,
-  });
+  useEffect(() => {
+    if (!isLoaded) return;
 
-  const role = (user?.publicMetadata?.role || "customer").toLowerCase();
+    const role = (user?.publicMetadata?.role || "customer").toLowerCase();
 
-  if (role === "admin") {
-    console.log("➡️ Redirigiendo a /dashboard/admin");
-    redirect("/dashboard/admin");
-  } else if (role === "owner") {
-    console.log("➡️ Redirigiendo a /dashboard/owner");
-    redirect("/dashboard/owner");
-  } else {
-    console.log("➡️ Redirigiendo a /dashboard/customer");
-    redirect("/dashboard/customer");
-  }
+    const dashboardRoutes = {
+      customer: "/dashboard/customer",
+      owner: "/dashboard/owner",
+      admin: "/dashboard/admin",
+    };
+
+    const target = dashboardRoutes[role] || "/";
+
+    router.replace(target); // 🔹 redirige automáticamente
+  }, [user, isLoaded, router]);
+
+  return <p className="p-6">Redirigiendo...</p>;
 }
