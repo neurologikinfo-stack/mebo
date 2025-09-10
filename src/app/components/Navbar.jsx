@@ -96,7 +96,11 @@ export default function Navbar() {
             )}
 
             <div className="w-8 h-8 flex items-center justify-center">
-              <UserButton afterSignOutUrl="/" userProfileMode="navigation" />
+              <UserButton
+                afterSignOutUrl="/"
+                userProfileMode="navigation"
+                userProfileUrl="/account" // 👈 ahora abre dentro de tu app
+              />
             </div>
           </SignedIn>
         </div>
