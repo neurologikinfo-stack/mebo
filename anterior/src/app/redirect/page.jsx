@@ -18,19 +18,24 @@ export default function Navbar() {
   const { user } = useUser();
   const [menuOpen, setMenuOpen] = useState(false);
 
-  // Rol actual (default customer)
-  const role = (user?.publicMetadata?.role || "customer").toLowerCase();
+  const role = user?.publicMetadata?.role || "user";
 
-  // 🔹 Rutas dinámicas de dashboard
-  const dashboardRoutes = {
-    customer: "/dashboard/customer",
-    owner: "/dashboard/owner",
-    admin: "/dashboard/admin",
-  };
+  const isActive = (href) =>
+    pathname === href
+      ? "text-black font-semibold"
+      : "text-gray-600 hover:text-black";
 
-  const dashboardPath = dashboardRoutes[role] || "/dashboard";
+  // Ruta del dashboard según rol
+  const dashboardPath =
+    role === "admin"
+      ? "/dashboard/admin"
+      : role === "customer"
+      ? "/dashboard/customer"
+      : role === "owner"
+      ? "/dashboard/owner"
+      : null;
 
-  // Texto dinámico del link de dashboard
+  // Texto dinámico según el rol
   const dashboardLabel =
     role === "customer"
       ? "Mis citas"
@@ -38,12 +43,7 @@ export default function Navbar() {
       ? "Panel de negocios"
       : role === "admin"
       ? "Dashboard"
-      : "Dashboard";
-
-  const isActive = (href) =>
-    pathname.startsWith(href)
-      ? "text-black font-semibold"
-      : "text-gray-600 hover:text-black";
+      : null;
 
   return (
     <header className="border-b bg-white">
@@ -58,20 +58,20 @@ export default function Navbar() {
           <Link href="/" className={`text-sm ${isActive("/")}`}>
             Inicio
           </Link>
-          <SignedIn>
+          {dashboardPath && (
             <Link
               href={dashboardPath}
               className={`text-sm ${isActive(dashboardPath)}`}
             >
-              {dashboardLabel}
+              Dashboard
             </Link>
-          </SignedIn>
+          )}
         </div>
 
         {/* Desktop actions */}
         <div className="hidden md:flex items-center gap-3 min-w-[200px] justify-end">
           <SignedOut>
-            <SignInButton mode="modal">
+            <SignInButton mode="modal" afterSignInUrl="/redirect">
               <span className="rounded-lg border px-3 py-1.5 text-sm hover:bg-gray-50 cursor-pointer">
                 Ingresar
               </span>
@@ -117,24 +117,23 @@ export default function Navbar() {
             <Link href="/" className={`text-sm ${isActive("/")}`}>
               Inicio
             </Link>
-
-            <SignedIn>
+            {dashboardPath && (
               <Link
                 href={dashboardPath}
                 className={`text-sm ${isActive(dashboardPath)}`}
               >
                 {dashboardLabel}
               </Link>
-            </SignedIn>
+            )}
 
             <SignedOut>
-              <SignInButton mode="modal">
+              <SignInButton mode="modal" afterSignInUrl="/redirect">
                 <span className="rounded-lg border px-3 py-1.5 text-sm hover:bg-gray-50 w-full text-left cursor-pointer">
                   Ingresar
                 </span>
               </SignInButton>
 
-              <SignUpButton mode="modal">
+              <SignUpButton mode="modal" afterSignUpUrl="/redirect">
                 <span className="rounded-lg bg-black px-3 py-1.5 text-sm text-white hover:bg-black/90 w-full text-left cursor-pointer">
                   Crear cuenta
                 </span>
@@ -148,6 +147,19 @@ export default function Navbar() {
               >
                 Book
               </Link>
+
+              {role === "admin" && (
+                <Link
+                  href="/dashboard/admin/business/new"
+                  className="rounded-lg bg-black px-3 py-1.5 text-sm text-white hover:bg-black/90 text-center"
+                >
+                  + Nuevo negocio
+                </Link>
+              )}
+
+              <div className="mt-2 w-8 h-8 flex items-center justify-center">
+                <UserButton afterSignOutUrl="/" userProfileMode="navigation" />
+              </div>
             </SignedIn>
           </div>
         </div>

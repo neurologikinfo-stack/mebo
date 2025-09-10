@@ -18,17 +18,12 @@ export default function Navbar() {
   const { user } = useUser();
   const [menuOpen, setMenuOpen] = useState(false);
 
-  // Rol actual (default customer)
   const role = (user?.publicMetadata?.role || "customer").toLowerCase();
 
-  // 🔹 Rutas dinámicas de dashboard
-  const dashboardRoutes = {
-    customer: "/dashboard/customer",
-    owner: "/dashboard/owner",
-    admin: "/dashboard/admin",
-  };
-
-  const dashboardPath = dashboardRoutes[role] || "/dashboard";
+  const isActive = (href) =>
+    pathname.startsWith(href)
+      ? "text-black font-semibold"
+      : "text-gray-600 hover:text-black";
 
   // Texto dinámico del link de dashboard
   const dashboardLabel =
@@ -39,11 +34,6 @@ export default function Navbar() {
       : role === "admin"
       ? "Dashboard"
       : "Dashboard";
-
-  const isActive = (href) =>
-    pathname.startsWith(href)
-      ? "text-black font-semibold"
-      : "text-gray-600 hover:text-black";
 
   return (
     <header className="border-b bg-white">
@@ -60,8 +50,8 @@ export default function Navbar() {
           </Link>
           <SignedIn>
             <Link
-              href={dashboardPath}
-              className={`text-sm ${isActive(dashboardPath)}`}
+              href="/dashboard"
+              className={`text-sm ${isActive("/dashboard")}`}
             >
               {dashboardLabel}
             </Link>
@@ -120,8 +110,8 @@ export default function Navbar() {
 
             <SignedIn>
               <Link
-                href={dashboardPath}
-                className={`text-sm ${isActive(dashboardPath)}`}
+                href="/dashboard"
+                className={`text-sm ${isActive("/dashboard")}`}
               >
                 {dashboardLabel}
               </Link>

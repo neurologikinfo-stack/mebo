@@ -1,0 +1,52 @@
+git save "feat: agregar endpoint backfill Clerk → Supabase"
+git push
+---
+
+
+git add src/app/api/backfill-clerk-profiles/route.js
+git commit -m "fix: backfill Clerk con runtime nodejs y logs"
+git push origin main
+---
+
+
+git add .
+git commit -m "test: webhook mínimo"
+git push
+
+
+-------
+                ┌─────────────┐
+                │     Clerk    │
+                │ (usuarios)   │
+                └──────┬───────┘
+                       │
+        Cambios en usuarios (create/update/delete)
+                       │
+                       ▼
+         ┌────────────────────────┐
+         │ Webhook:               │
+         │ /api/webhooks/clerk    │
+         │                        │
+         │ • user.created         │
+         │ • user.updated         │
+         │ • user.deleted         │
+         └─────────┬──────────────┘
+                   │
+                   ▼
+        ┌──────────────────────┐
+        │       Supabase       │
+        │      (profiles)      │
+        └──────────────────────┘
+                   ▲
+                   │  (ejecutado manualmente desde el botón)
+                   │
+         ┌──────────────────────────┐
+         │ Backfill:                │
+         │ /api/backfill-clerk-     │
+         │ profiles                 │
+         │                          │
+         │ • Recorre Clerk con      │
+         │   paginación             │
+         │ • Inserta/actualiza en   │
+         │   Supabase               │
+         └──────────────────────────┘
