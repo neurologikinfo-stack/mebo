@@ -1,4 +1,3 @@
-// /app/api/webhooks/clerk/route.js
 export const runtime = "nodejs";
 
 import { headers } from "next/headers";
@@ -19,8 +18,6 @@ export async function POST(req) {
   const svix_id = headerPayload.get("svix-id");
   const svix_timestamp = headerPayload.get("svix-timestamp");
   const svix_signature = headerPayload.get("svix-signature");
-
-  console.log("📩 Webhook recibido", { svix_id, svix_timestamp });
 
   const wh = new Webhook(process.env.CLERK_WEBHOOK_SECRET);
 
@@ -49,11 +46,22 @@ export async function POST(req) {
 
   const avatar_url = data.image_url ? `${data.image_url}?size=256` : null;
 
-  const role = data.public_metadata?.role || "user";
+  // 🔹 Nueva lógica de roles
+  let role = data.public_metadata?.role;
+
+  if (!role) {
+    role = "customer"; // por defecto
+  }
+
+  // 👇 Admins según lista de correos
+  const adminEmails = ["admin@mebo.com"];
+  if (adminEmails.includes(email)) {
+    role = "admin";
+  }
 
   try {
     if (eventType === "user.created" || eventType === "user.updated") {
-      // 👇 nos aseguramos que el rol exista en Clerk metadata
+      // 👇 Actualizamos Clerk con el rol
       await users.updateUser(data.id, {
         publicMetadata: {
           ...data.public_metadata,
@@ -61,7 +69,7 @@ export async function POST(req) {
         },
       });
 
-      // 👇 siempre guardamos en profiles
+      // 👇 Guardamos/actualizamos en profiles
       const { error: profileError } = await supabase.from("profiles").upsert(
         {
           clerk_id: data.id,
@@ -83,7 +91,7 @@ export async function POST(req) {
         console.log(`✅ Usuario sincronizado en profiles: ${email} (${role})`);
       }
 
-      // 👇 si es OWNER => lo guardamos en owners
+      // 👇 Si es OWNER => lo guardamos en owners
       if (role === "owner") {
         const { error: ownerError } = await supabase.from("owners").upsert(
           {
@@ -106,7 +114,6 @@ export async function POST(req) {
       } else {
         // Si ya no es owner => eliminarlo de owners
         await supabase.from("owners").delete().eq("clerk_id", data.id);
-        console.log(`🗑 Usuario eliminado de owners: ${data.id}`);
       }
     }
 

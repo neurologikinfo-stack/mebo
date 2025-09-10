@@ -2,10 +2,11 @@ export const runtime = "nodejs";
 
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { clerkClient } from "@clerk/clerk-sdk-node"; // 👈 usar este
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY // service key para saltar RLS
+  process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
 export async function POST(req) {
@@ -27,7 +28,12 @@ export async function POST(req) {
       );
     }
 
-    // 🔑 Actualizar solo en Supabase
+    // 1️⃣ Actualizar en Clerk
+    await clerkClient.users.updateUser(clerk_id, {
+      publicMetadata: { role },
+    });
+
+    // 2️⃣ Actualizar en Supabase
     const { error } = await supabase
       .from("profiles")
       .update({
@@ -44,11 +50,11 @@ export async function POST(req) {
       );
     }
 
-    console.log("✅ Rol actualizado en Supabase:", { clerk_id, role });
+    console.log("✅ Rol actualizado en Clerk y Supabase:", { clerk_id, role });
 
     return NextResponse.json({
       success: true,
-      message: `Rol actualizado a '${role}' en Supabase`,
+      message: `Rol actualizado a '${role}' en Clerk y Supabase`,
       newRole: role,
     });
   } catch (err) {
