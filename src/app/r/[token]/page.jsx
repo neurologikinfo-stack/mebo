@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
-import { supabase } from "../../../utils/supabase/client";
+import { supabase } from "@/utils/supabase/client";
 
 export default function PublicAppointmentPage() {
   const { token } = useParams();

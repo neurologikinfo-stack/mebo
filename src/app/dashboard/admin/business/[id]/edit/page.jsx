@@ -1,4 +1,4 @@
-import { supabaseServer } from "../../../../../utils/supabase/server";
+import { supabaseServer } from "@/utils/supabase/server";
 import { updateBusiness, deleteBusiness } from "../../actions";
 import { redirect } from "next/navigation";
 import Link from "next/link";

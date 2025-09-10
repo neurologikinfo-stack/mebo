@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { useUser } from "@clerk/nextjs"; // 👈 importamos Clerk
-import { supabase } from "../../../utils/supabase/client";
+import { supabase } from "@/utils/supabase/client";
 
 export default function BookPage() {
   const { slug } = useParams();
