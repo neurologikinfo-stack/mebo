@@ -22,11 +22,14 @@ export default function Navbar() {
   const rawRole = user?.publicMetadata?.role || null;
   const role = typeof rawRole === "string" ? rawRole.toLowerCase() : null;
 
-  // Mapeo de roles → rutas y etiquetas
+  // 🔹 Rutas configurables y escalables por rol
   const dashboardRoutes = {
     admin: { path: "/dashboard/admin", label: "Dashboard" },
     customer: { path: "/dashboard/customer", label: "Mis citas" },
     owner: { path: "/dashboard/owner", label: "Panel de negocios" },
+    // 🚀 Si mañana agregas más roles:
+    // agent: { path: "/dashboard/agent", label: "Panel de agente" },
+    // staff: { path: "/dashboard/staff", label: "Staff" },
   };
 
   // Obtiene la ruta si existe, o null si no corresponde

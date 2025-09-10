@@ -34,26 +34,21 @@ export default function OwnerDashboard() {
     (async () => {
       setLoading(true);
 
-      // Buscar owner
-      const { data: owner } = await supabase
-        .from("owners")
-        .select("id")
-        .or(
-          `email.eq.${user.primaryEmailAddress?.emailAddress},clerk_id.eq.${user.id}`
-        )
-        .maybeSingle();
+      // 🔹 Negocios del owner (Clerk ID)
+      const { data: biz, error: bizError } = await supabase
+        .from("businesses")
+        .select("id, name, logo_url, created_at")
+        .eq("owner_clerk_id", user.id)
+        .is("deleted_at", null)
+        .order("created_at", { ascending: false });
 
-      if (!owner) {
+      if (bizError) {
+        console.error("Error cargando negocios:", bizError.message);
+        setBusinesses([]);
+        setStats({ businesses: 0, appointments: 0, payments: 0 });
         setLoading(false);
         return;
       }
-
-      // Negocios del owner
-      const { data: biz } = await supabase
-        .from("businesses")
-        .select("id, name, logo_url, created_at")
-        .eq("owner_id", owner.id)
-        .order("created_at", { ascending: false });
 
       if (!biz?.length) {
         setStats({ businesses: 0, appointments: 0, payments: 0 });
@@ -66,19 +61,19 @@ export default function OwnerDashboard() {
 
       const businessIds = biz.map((b) => b.id);
 
-      // Citas
+      // 🔹 Citas
       const { data: appts } = await supabase
         .from("appointments")
         .select("id, starts_at, status")
         .in("business_id", businessIds);
 
-      // Pagos
+      // 🔹 Pagos
       const { data: pays } = await supabase
         .from("payments")
         .select("id, amount, created_at")
         .in("business_id", businessIds);
 
-      // KPIs
+      // 🔹 KPIs
       setStats({
         businesses: biz.length,
         appointments: appts?.length || 0,
