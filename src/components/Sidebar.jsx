@@ -25,14 +25,16 @@ export default function Sidebar({
       <aside
         className={`hidden md:flex flex-col transition-all duration-300
         ${collapsed ? "w-20" : "w-64"}
-        bg-white border-r border-gray-200 shadow-sm`}
+        bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 shadow-sm`}
       >
-        <div className="flex items-center justify-between p-4 border-b">
+        <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
           {!collapsed && (
-            <h2 className="text-lg font-bold text-gray-800">Panel</h2>
+            <h2 className="text-lg font-bold text-gray-800 dark:text-gray-100">
+              Panel
+            </h2>
           )}
           <button
-            className="p-2 rounded hover:bg-gray-100"
+            className="p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-800"
             onClick={toggleCollapsed}
           >
             {collapsed ? "➡️" : "⬅️"}
@@ -50,7 +52,7 @@ export default function Sidebar({
                 className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition ${
                   active
                     ? "bg-blue-600 text-white shadow"
-                    : "text-gray-600 hover:bg-gray-100"
+                    : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
                 }`}
               >
                 <Icon className="h-5 w-5 flex-shrink-0" />
@@ -69,18 +71,20 @@ export default function Sidebar({
         onClick={toggleCollapsed}
       >
         <aside
-          className={`absolute top-0 left-0 h-full w-64 bg-white shadow-lg p-4 transition-transform duration-300 ${
+          className={`absolute top-0 left-0 h-full w-64 bg-white dark:bg-gray-900 shadow-lg p-4 transition-transform duration-300 ${
             collapsed ? "-translate-x-full" : "translate-x-0"
           }`}
           onClick={(e) => e.stopPropagation()} // Evita cerrar si haces click dentro
         >
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-lg font-bold text-gray-800">Panel</h2>
+          <div className="flex items-center justify-between mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
+            <h2 className="text-lg font-bold text-gray-800 dark:text-gray-100">
+              Panel
+            </h2>
             <button
-              className="p-2 rounded hover:bg-gray-100"
+              className="p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-800"
               onClick={toggleCollapsed}
             >
-              <X className="h-5 w-5" />
+              <X className="h-5 w-5 text-gray-700 dark:text-gray-300" />
             </button>
           </div>
 
@@ -96,7 +100,7 @@ export default function Sidebar({
                   className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition ${
                     active
                       ? "bg-blue-600 text-white shadow"
-                      : "text-gray-600 hover:bg-gray-100"
+                      : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
                   }`}
                 >
                   <Icon className="h-5 w-5 flex-shrink-0" />
