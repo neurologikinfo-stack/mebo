@@ -1,30 +1,88 @@
-import { supabaseServer } from "@/utils/supabase/server";
+"use client";
+
+import { useEffect, useState } from "react";
 import Link from "next/link";
+import { MoreHorizontal } from "lucide-react";
 
-export default async function BusinessListPage() {
-  const supabase = supabaseServer();
+// shadcn/ui
+import {
+  Table,
+  TableHeader,
+  TableRow,
+  TableHead,
+  TableBody,
+  TableCell,
+} from "@/components/ui/table";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
 
-  const { data: businesses, error } = await supabase
-    .from("businesses")
-    .select("id, name, slug, email, phone, created_at")
-    .order("created_at", { ascending: false });
+export default function BusinessListPage() {
+  const [businesses, setBusinesses] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [err, setErr] = useState("");
+  const [processingId, setProcessingId] = useState(null);
 
-  if (error) {
-    return <p className="text-red-600">Error: {error.message}</p>;
+  useEffect(() => {
+    fetchBusinesses();
+  }, []);
+
+  async function fetchBusinesses() {
+    setLoading(true);
+    setErr("");
+
+    try {
+      const res = await fetch("/api/admin/businesses");
+      const result = await res.json();
+      if (!result.ok)
+        throw new Error(result.error || "Error cargando negocios");
+      setBusinesses(result.data ?? []);
+    } catch (e) {
+      setErr(e.message);
+    }
+
+    setLoading(false);
   }
 
-  if (!businesses || businesses.length === 0) {
-    return (
-      <div className="p-6 bg-white rounded-xl border shadow">
-        <p className="text-gray-600">No hay negocios registrados todavía.</p>
-        <Link
-          href="/dashboard/admin/business/new"
-          className="mt-4 inline-block rounded bg-blue-600 text-white px-4 py-2 text-sm"
-        >
-          Crear negocio
-        </Link>
-      </div>
-    );
+  async function handleDelete(id) {
+    if (!confirm("¿Seguro que quieres eliminar este negocio?")) return;
+    setProcessingId(id);
+
+    try {
+      const res = await fetch(`/api/admin/businesses/${id}`, {
+        method: "DELETE",
+      });
+      const result = await res.json();
+      if (!result.ok) throw new Error(result.error);
+      fetchBusinesses();
+    } catch (e) {
+      alert("Error eliminando negocio: " + e.message);
+    }
+
+    setProcessingId(null);
+  }
+
+  async function handleRestore(id) {
+    setProcessingId(id);
+
+    try {
+      const res = await fetch(`/api/admin/businesses/${id}`, {
+        method: "PATCH",
+      });
+      const result = await res.json();
+      if (!result.ok) throw new Error(result.error);
+      fetchBusinesses();
+    } catch (e) {
+      alert("Error restaurando negocio: " + e.message);
+    }
+
+    setProcessingId(null);
   }
 
   return (
@@ -34,63 +92,110 @@ export default async function BusinessListPage() {
         <h1 className="text-2xl font-bold tracking-tight text-gray-800">
           Negocios
         </h1>
-        <span className="text-sm text-gray-500">
-          Total: {businesses.length} negocios
-        </span>
+        <Link href="/dashboard/admin/business/new">
+          <Button className="bg-blue-600 hover:bg-blue-500">
+            Crear negocio
+          </Button>
+        </Link>
       </div>
 
-      {/* Tabla compacta */}
+      {loading && <p>Cargando...</p>}
+      {err && <p className="text-red-600">{err}</p>}
+
+      {/* Tabla */}
       <div className="overflow-hidden rounded-xl border border-gray-200 shadow-sm bg-white">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-6 py-3 text-left text-sm font-semibold text-gray-600">
-                Nombre
-              </th>
-              <th className="px-6 py-3 text-left text-sm font-semibold text-gray-600">
-                Slug
-              </th>
-              <th className="px-6 py-3 text-left text-sm font-semibold text-gray-600">
-                Email
-              </th>
-              <th className="px-6 py-3 text-left text-sm font-semibold text-gray-600">
-                Teléfono
-              </th>
-              <th className="px-6 py-3 text-left text-sm font-semibold text-gray-600">
-                Acción
-              </th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-100 bg-white">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Logo</TableHead>
+              <TableHead>Nombre</TableHead>
+              <TableHead>Slug</TableHead>
+              <TableHead>Email</TableHead>
+              <TableHead>Teléfono</TableHead>
+              <TableHead>Estado</TableHead>
+              <TableHead className="text-right">Acción</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {businesses.map((b) => (
-              <tr key={b.id} className="hover:bg-gray-50">
-                <td className="px-6 py-4 text-sm text-gray-800">{b.name}</td>
-                <td className="px-6 py-4 text-sm text-gray-600">@{b.slug}</td>
-                <td className="px-6 py-4 text-sm text-gray-600">
-                  {b.email || "—"}
-                </td>
-                <td className="px-6 py-4 text-sm text-gray-600">
-                  {b.phone || "—"}
-                </td>
-                <td className="px-6 py-4 text-sm">
-                  <Link
-                    href={`/dashboard/admin/business/${b.id}`}
-                    className="text-blue-600 hover:underline"
-                  >
-                    Ver
-                  </Link>{" "}
-                  |{" "}
-                  <Link
-                    href={`/dashboard/admin/business/${b.id}/edit`}
-                    className="text-gray-600 hover:underline"
-                  >
-                    Editar
-                  </Link>
-                </td>
-              </tr>
+              <TableRow key={b.id}>
+                {/* Logo */}
+                <TableCell>
+                  {b.logo_url ? (
+                    <img
+                      src={b.logo_url}
+                      alt={b.name}
+                      className="h-10 w-10 rounded-full object-cover border"
+                    />
+                  ) : (
+                    <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 font-medium">
+                      {b.name?.charAt(0).toUpperCase()}
+                    </div>
+                  )}
+                </TableCell>
+
+                {/* Info */}
+                <TableCell className="font-medium">{b.name}</TableCell>
+                <TableCell>@{b.slug}</TableCell>
+                <TableCell>{b.email || "—"}</TableCell>
+                <TableCell>{b.phone || "—"}</TableCell>
+                <TableCell>
+                  {b.deleted_at ? (
+                    <span className="text-red-600 font-medium">Eliminado</span>
+                  ) : (
+                    <span className="text-green-600 font-medium">Activo</span>
+                  )}
+                </TableCell>
+
+                {/* Acciones */}
+                <TableCell className="text-right">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon">
+                        <MoreHorizontal className="h-5 w-5 text-gray-600" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuLabel>Acciones</DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        onClick={() =>
+                          (window.location.href = `/dashboard/admin/business/${b.id}`)
+                        }
+                      >
+                        Ver
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() =>
+                          (window.location.href = `/dashboard/admin/business/${b.id}/edit`)
+                        }
+                      >
+                        Editar
+                      </DropdownMenuItem>
+                      {b.deleted_at ? (
+                        <DropdownMenuItem
+                          onClick={() => handleRestore(b.id)}
+                          disabled={processingId === b.id}
+                          className="text-green-600"
+                        >
+                          {processingId === b.id ? "Restaurando…" : "Restaurar"}
+                        </DropdownMenuItem>
+                      ) : (
+                        <DropdownMenuItem
+                          onClick={() => handleDelete(b.id)}
+                          disabled={processingId === b.id}
+                          className="text-red-600"
+                        >
+                          {processingId === b.id ? "Eliminando…" : "Eliminar"}
+                        </DropdownMenuItem>
+                      )}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </TableCell>
+              </TableRow>
             ))}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
     </div>
   );

@@ -18,32 +18,24 @@ export default function Navbar() {
   const { user } = useUser();
   const [menuOpen, setMenuOpen] = useState(false);
 
-  const role = user?.publicMetadata?.role || "user";
+  // Normalizamos el rol siempre a minúsculas
+  const rawRole = user?.publicMetadata?.role || null;
+  const role = typeof rawRole === "string" ? rawRole.toLowerCase() : null;
+
+  // Mapeo de roles → rutas y etiquetas
+  const dashboardRoutes = {
+    admin: { path: "/dashboard/admin", label: "Dashboard" },
+    customer: { path: "/dashboard/customer", label: "Mis citas" },
+    owner: { path: "/dashboard/owner", label: "Panel de negocios" },
+  };
+
+  // Obtiene la ruta si existe, o null si no corresponde
+  const current = role ? dashboardRoutes[role] || null : null;
 
   const isActive = (href) =>
     pathname === href
       ? "text-black font-semibold"
       : "text-gray-600 hover:text-black";
-
-  // Ruta del dashboard según rol
-  const dashboardPath =
-    role === "admin"
-      ? "/dashboard/admin"
-      : role === "customer"
-      ? "/dashboard/customer"
-      : role === "owner"
-      ? "/dashboard/owner"
-      : null;
-
-  // Texto dinámico según el rol
-  const dashboardLabel =
-    role === "customer"
-      ? "Mis citas"
-      : role === "owner"
-      ? "Panel de negocios"
-      : role === "admin"
-      ? "Dashboard"
-      : null;
 
   return (
     <header className="border-b bg-white">
@@ -58,29 +50,26 @@ export default function Navbar() {
           <Link href="/" className={`text-sm ${isActive("/")}`}>
             Inicio
           </Link>
-          {dashboardPath && (
-            <Link
-              href={dashboardPath}
-              className={`text-sm ${isActive(dashboardPath)}`}
-            >
-              Dashboard
-            </Link>
-          )}
+          <SignedIn>
+            {current && (
+              <Link
+                href={current.path}
+                className={`text-sm ${isActive(current.path)}`}
+              >
+                {current.label}
+              </Link>
+            )}
+          </SignedIn>
         </div>
 
         {/* Desktop actions */}
         <div className="hidden md:flex items-center gap-3 min-w-[200px] justify-end">
           <SignedOut>
-            <SignInButton mode="modal" afterSignInUrl="/redirect">
-              <button className="rounded-lg border px-3 py-1.5 text-sm hover:bg-gray-50">
+            <SignInButton mode="modal">
+              <span className="rounded-lg border px-3 py-1.5 text-sm hover:bg-gray-50 cursor-pointer">
                 Ingresar
-              </button>
+              </span>
             </SignInButton>
-            <SignUpButton mode="modal" afterSignUpUrl="/redirect">
-              <button className="rounded-lg bg-black px-3 py-1.5 text-sm text-white hover:bg-black/90">
-                Crear cuenta
-              </button>
-            </SignUpButton>
           </SignedOut>
 
           <SignedIn>
@@ -122,25 +111,29 @@ export default function Navbar() {
             <Link href="/" className={`text-sm ${isActive("/")}`}>
               Inicio
             </Link>
-            {dashboardPath && (
-              <Link
-                href={dashboardPath}
-                className={`text-sm ${isActive(dashboardPath)}`}
-              >
-                {dashboardLabel}
-              </Link>
-            )}
+
+            <SignedIn>
+              {current && (
+                <Link
+                  href={current.path}
+                  className={`text-sm ${isActive(current.path)}`}
+                >
+                  {current.label}
+                </Link>
+              )}
+            </SignedIn>
 
             <SignedOut>
-              <SignInButton mode="modal" afterSignInUrl="/redirect">
-                <button className="rounded-lg border px-3 py-1.5 text-sm hover:bg-gray-50 w-full text-left">
+              <SignInButton mode="modal">
+                <span className="rounded-lg border px-3 py-1.5 text-sm hover:bg-gray-50 w-full text-left cursor-pointer">
                   Ingresar
-                </button>
+                </span>
               </SignInButton>
-              <SignUpButton mode="modal" afterSignUpUrl="/redirect">
-                <button className="rounded-lg bg-black px-3 py-1.5 text-sm text-white hover:bg-black/90 w-full text-left">
+
+              <SignUpButton mode="modal">
+                <span className="rounded-lg bg-black px-3 py-1.5 text-sm text-white hover:bg-black/90 w-full text-left cursor-pointer">
                   Crear cuenta
-                </button>
+                </span>
               </SignUpButton>
             </SignedOut>
 

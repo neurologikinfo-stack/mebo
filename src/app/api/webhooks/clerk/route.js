@@ -61,8 +61,8 @@ export async function POST(req) {
         },
       });
 
-      // 👇 también lo guardamos en Supabase
-      const { error } = await supabase.from("profiles").upsert(
+      // 👇 siempre guardamos en profiles
+      const { error: profileError } = await supabase.from("profiles").upsert(
         {
           clerk_id: data.id,
           email,
@@ -74,23 +74,46 @@ export async function POST(req) {
         { onConflict: "clerk_id" }
       );
 
-      if (error) {
-        console.error("❌ Error guardando usuario en Supabase:", error.message);
+      if (profileError) {
+        console.error(
+          "❌ Error guardando usuario en profiles:",
+          profileError.message
+        );
       } else {
-        console.log(`✅ Usuario sincronizado: ${email} (${role})`);
+        console.log(`✅ Usuario sincronizado en profiles: ${email} (${role})`);
+      }
+
+      // 👇 si es OWNER => lo guardamos en owners
+      if (role === "owner") {
+        const { error: ownerError } = await supabase.from("owners").upsert(
+          {
+            clerk_id: data.id,
+            full_name,
+            email,
+            created_at: new Date().toISOString(),
+          },
+          { onConflict: "clerk_id" }
+        );
+
+        if (ownerError) {
+          console.error(
+            "❌ Error guardando usuario en owners:",
+            ownerError.message
+          );
+        } else {
+          console.log(`🏠 Usuario sincronizado en owners: ${email}`);
+        }
+      } else {
+        // Si ya no es owner => eliminarlo de owners
+        await supabase.from("owners").delete().eq("clerk_id", data.id);
+        console.log(`🗑 Usuario eliminado de owners: ${data.id}`);
       }
     }
 
     if (eventType === "user.deleted") {
-      const { error } = await supabase
-        .from("profiles")
-        .delete()
-        .eq("clerk_id", data.id);
-      if (error) {
-        console.error("❌ Error eliminando usuario:", error.message);
-      } else {
-        console.log(`🗑 Usuario eliminado: ${data.id}`);
-      }
+      await supabase.from("profiles").delete().eq("clerk_id", data.id);
+      await supabase.from("owners").delete().eq("clerk_id", data.id);
+      console.log(`🗑 Usuario eliminado de profiles y owners: ${data.id}`);
     }
   } catch (err) {
     console.error("❌ Error general en webhook:", err.message);

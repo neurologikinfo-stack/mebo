@@ -5,6 +5,24 @@ import { useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/utils/supabase/client";
 
+// shadcn/ui
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardContent,
+  CardFooter,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
+import { Skeleton } from "@/components/ui/skeleton";
+
 const PAGE_SIZE = 9;
 
 export default function Home() {
@@ -90,24 +108,22 @@ export default function Home() {
   }
 
   return (
-    <main className="p-8 max-w-6xl mx-auto">
+    <main className="p-8 max-w-7xl mx-auto">
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-gray-800">
-            Negocios
-          </h1>
-          <p className="text-sm text-gray-500">
+          <h1 className="text-3xl font-bold tracking-tight">Negocios</h1>
+          <p className="text-sm text-muted-foreground">
             Listado desde tu base de datos en Supabase.
           </p>
         </div>
         {isLoaded && isSignedIn && isAdmin && (
-          <button
+          <Button
             onClick={handleSync}
-            className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow hover:bg-blue-500"
+            className="bg-blue-600 hover:bg-blue-500"
           >
             Sincronizar Usuarios
-          </button>
+          </Button>
         )}
       </div>
 
@@ -123,67 +139,78 @@ export default function Home() {
           <EmptyState hasQuery={!!q} clear={() => setQ("")} />
         ) : (
           <>
-            <ul className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {businesses.map((b) => (
-                <li
+                <Card
                   key={b.id}
+                  className="cursor-pointer hover:shadow-md transition"
                   onClick={() => router.push(`/business/${b.slug}`)}
-                  className="cursor-pointer rounded-xl border border-gray-200 bg-white p-5 shadow-sm transition hover:shadow-md hover:bg-gray-50"
                 >
-                  <div className="mb-3 flex items-start justify-between">
-                    <h2 className="line-clamp-1 text-lg font-semibold text-gray-800">
-                      {b.name || "Sin nombre"}
-                    </h2>
-                    <span className="rounded-full border border-gray-300 bg-gray-50 px-2 py-0.5 text-xs text-gray-600">
-                      {formatDate(b.created_at)}
-                    </span>
-                  </div>
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="line-clamp-1">
+                        {b.name || "Sin nombre"}
+                      </CardTitle>
+                      <Badge variant="outline">
+                        {formatDate(b.created_at)}
+                      </Badge>
+                    </div>
+                    <p className="text-xs text-muted-foreground">@{b.slug}</p>
+                  </CardHeader>
 
-                  <p className="text-xs text-gray-500">@{b.slug}</p>
-
-                  {b.description && (
-                    <p className="mt-2 line-clamp-2 text-sm text-gray-600">
-                      {b.description}
-                    </p>
-                  )}
-
-                  <div className="mt-3 space-y-1 text-sm text-gray-600">
-                    {b.phone && <p>📞 {b.phone}</p>}
-                    {b.email && <p>✉️ {b.email}</p>}
-                  </div>
-
-                  <div className="mt-5 flex gap-2">
-                    {isAdmin || b.created_by === userId ? (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          router.push(
-                            `/dashboard/admin/businesses/${b.id}/edit`
-                          );
-                        }}
-                        className="rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50"
-                      >
-                        Editar
-                      </button>
-                    ) : (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          router.push(`/${b.slug}/book`);
-                        }}
-                        className="rounded-lg border border-blue-500 bg-blue-50 px-3 py-2 text-sm font-medium text-blue-700 shadow-sm hover:bg-blue-100"
-                      >
-                        Book
-                      </button>
+                  <CardContent>
+                    {b.description && (
+                      <p className="line-clamp-2 text-sm text-gray-600 mb-2">
+                        {b.description}
+                      </p>
                     )}
-                  </div>
-                </li>
+                    <div className="space-y-1 text-sm text-gray-600">
+                      {b.phone && <p>📞 {b.phone}</p>}
+                      {b.email && <p>✉️ {b.email}</p>}
+                    </div>
+                  </CardContent>
+
+                  <CardFooter className="flex justify-between">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="outline" size="sm">
+                          Acciones
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent>
+                        {isAdmin || b.created_by === userId ? (
+                          <DropdownMenuItem
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              router.push(
+                                `/dashboard/admin/businesses/${b.id}/edit`
+                              );
+                            }}
+                          >
+                            Editar
+                          </DropdownMenuItem>
+                        ) : (
+                          <DropdownMenuItem
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              router.push(`/${b.slug}/book`);
+                            }}
+                          >
+                            Reservar
+                          </DropdownMenuItem>
+                        )}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </CardFooter>
+                </Card>
               ))}
-            </ul>
+            </div>
 
             {/* Paginador */}
             <div className="mt-8 flex items-center justify-between">
-              <span className="text-sm text-gray-500">{showingRange}</span>
+              <span className="text-sm text-muted-foreground">
+                {showingRange}
+              </span>
               <Pager
                 page={page}
                 maxPage={maxPage}
@@ -204,7 +231,7 @@ export default function Home() {
 function formatDate(d) {
   if (!d) return "—";
   try {
-    return new Intl.DateTimeFormat([], {
+    return new Intl.DateTimeFormat("es", {
       year: "numeric",
       month: "short",
       day: "2-digit",
@@ -216,78 +243,69 @@ function formatDate(d) {
 
 function SkeletonGrid() {
   return (
-    <ul className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
       {Array.from({ length: 6 }).map((_, i) => (
-        <li
-          key={i}
-          className="rounded-xl border border-gray-200 p-4 animate-pulse bg-white shadow-sm"
-        >
-          <div className="h-5 w-2/3 rounded bg-gray-200" />
-          <div className="mt-1 h-3 w-28 rounded bg-gray-200" />
-          <div className="mt-3 h-12 w-full rounded bg-gray-200" />
-          <div className="mt-4 flex gap-2">
-            <div className="h-8 w-20 rounded bg-gray-200" />
-            <div className="h-8 w-20 rounded bg-gray-200" />
-          </div>
-        </li>
+        <Card key={i} className="animate-pulse">
+          <CardHeader>
+            <Skeleton className="h-5 w-2/3" />
+            <Skeleton className="h-3 w-28 mt-1" />
+          </CardHeader>
+          <CardContent>
+            <Skeleton className="h-12 w-full" />
+          </CardContent>
+          <CardFooter className="flex gap-2">
+            <Skeleton className="h-8 w-20" />
+            <Skeleton className="h-8 w-20" />
+          </CardFooter>
+        </Card>
       ))}
-    </ul>
+    </div>
   );
 }
 
 function EmptyState({ hasQuery, clear }) {
   return (
-    <div className="rounded-xl border bg-white p-8 text-center shadow-sm">
-      <div className="text-3xl">🗂️</div>
-      <h3 className="mt-2 text-lg font-semibold text-gray-800">
-        {hasQuery ? "Sin resultados" : "Aún no hay negocios"}
-      </h3>
-      <p className="mt-1 text-sm text-gray-600">
-        {hasQuery
-          ? "Prueba con otro término o limpia el filtro."
-          : "Crea tu primer negocio para empezar."}
-      </p>
-      <div className="mt-4 flex justify-center gap-2">
-        {hasQuery ? (
-          <button
-            onClick={clear}
-            className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50"
-          >
-            Limpiar búsqueda
-          </button>
-        ) : (
-          <button
-            onClick={() => router.push("/dashboard/admin/businesses/new")}
-            className="rounded-lg bg-black px-4 py-2 text-sm font-medium text-white shadow hover:bg-gray-800"
-          >
-            Crear negocio
-          </button>
-        )}
-      </div>
-    </div>
+    <Card className="text-center py-10">
+      <CardContent>
+        <div className="text-4xl mb-2">🗂️</div>
+        <h3 className="text-lg font-semibold">
+          {hasQuery ? "Sin resultados" : "Aún no hay negocios"}
+        </h3>
+        <p className="text-sm text-muted-foreground">
+          {hasQuery
+            ? "Prueba con otro término o limpia el filtro."
+            : "Crea tu primer negocio para empezar."}
+        </p>
+        <div className="mt-4 flex justify-center gap-2">
+          {hasQuery ? (
+            <Button variant="outline" onClick={clear}>
+              Limpiar búsqueda
+            </Button>
+          ) : (
+            <Button
+              onClick={() => router.push("/dashboard/admin/businesses/new")}
+            >
+              Crear negocio
+            </Button>
+          )}
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 
 function Pager({ page, maxPage, canPrev, canNext, onPrev, onNext }) {
   return (
     <div className="flex items-center gap-2">
-      <button
-        onClick={onPrev}
-        disabled={!canPrev}
-        className="rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 disabled:opacity-50"
-      >
+      <Button onClick={onPrev} disabled={!canPrev} variant="outline" size="sm">
         ← Anterior
-      </button>
-      <span className="text-sm text-gray-600">
+      </Button>
+      <span className="text-sm text-muted-foreground">
         Página {page} / {maxPage}
       </span>
-      <button
-        onClick={onNext}
-        disabled={!canNext}
-        className="rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 disabled:opacity-50"
-      >
+      <Button onClick={onNext} disabled={!canNext} variant="outline" size="sm">
         Siguiente →
-      </button>
+      </Button>
     </div>
   );
 }

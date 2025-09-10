@@ -45,12 +45,11 @@ async function validateUniqueName(name, supabase) {
 }
 
 // 🔹 Subir archivo de logo a Supabase Storage
-async function uploadLogo(file, supabase, businessSlug, userId) {
+async function uploadLogo(file, supabase, businessSlug) {
   if (!file || file.size === 0) return null;
 
   const fileExt = file.name.split(".").pop();
-  // 📂 Guardamos en carpeta con el userId → compatible con policy
-  const fileName = `${userId}/${businessSlug}-${Date.now()}.${fileExt}`;
+  const fileName = `${businessSlug}-${Date.now()}.${fileExt}`;
 
   const { error: uploadError } = await supabase.storage
     .from("business-logos")
@@ -133,7 +132,7 @@ export async function createOwnerBusiness(formData) {
   // 🔹 Subir logo si existe
   let logoUrl = null;
   if (file && file.size > 0) {
-    logoUrl = await uploadLogo(file, supabase, slug, userId);
+    logoUrl = await uploadLogo(file, supabase, slug);
   }
 
   // 🔹 Insertar negocio

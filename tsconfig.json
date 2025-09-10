@@ -28,7 +28,8 @@
     "src",
     ".next/types/**/*.ts",
     ".next/types/app/dashboard/customer/layout.jsx",
-    ".next/types/app/dashboard/customer/page.jsx"
+    ".next/types/app/dashboard/customer/page.jsx",
+    "tailwind.config.js"
   ],
   "exclude": ["node_modules"]
 }

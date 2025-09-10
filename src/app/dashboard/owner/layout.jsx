@@ -13,7 +13,7 @@ import {
 
 const menuItems = [
   { name: "Dashboard", href: "/dashboard/owner", icon: LayoutDashboard },
-  { name: "Mis Propiedades", href: "/dashboard/owner/properties", icon: Home },
+  { name: "Mis Negocios", href: "/dashboard/owner/businesses", icon: Home },
   { name: "Pagos", href: "/dashboard/owner/payments", icon: DollarSign },
 ];
 
