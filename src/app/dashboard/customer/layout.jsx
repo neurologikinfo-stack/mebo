@@ -9,7 +9,7 @@ import {
   LayoutDashboard,
   Calendar,
   User,
-  LogOut,
+  Settings,
 } from "lucide-react";
 
 const menuItems = [
@@ -20,6 +20,11 @@ const menuItems = [
     icon: Calendar,
   },
   { name: "Perfil", href: "/dashboard/customer/profile", icon: User },
+  {
+    name: "Configuración",
+    href: "/dashboard/customer/settings",
+    icon: Settings,
+  },
 ];
 
 export default function CustomerLayout({ children }) {
@@ -27,7 +32,7 @@ export default function CustomerLayout({ children }) {
   const [collapsed, setCollapsed] = useState(false);
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
+    <>
       {/* Sidebar */}
       <aside
         className={`${
@@ -38,7 +43,6 @@ export default function CustomerLayout({ children }) {
           {!collapsed && (
             <h2 className="text-lg font-bold text-gray-800">Panel Cliente</h2>
           )}
-          {/* Botón colapsar/expandir */}
           <button
             className="p-2 rounded hover:bg-gray-100"
             onClick={() => setCollapsed(!collapsed)}
@@ -51,7 +55,6 @@ export default function CustomerLayout({ children }) {
           </button>
         </div>
 
-        {/* Menú */}
         <nav className="px-2 py-4 space-y-1">
           {menuItems.map((item) => {
             const active = pathname === item.href;
@@ -74,12 +77,10 @@ export default function CustomerLayout({ children }) {
         </nav>
       </aside>
 
-      {/* Main con Navbar superior */}
+      {/* Main */}
       <div className="flex flex-col flex-1">
-        {/* Navbar */}
         <header className="sticky top-0 z-20 w-full bg-white border-b border-gray-200 shadow-sm">
           <div className="flex items-center justify-between px-4 py-3">
-            {/* Botón menú en mobile */}
             <button
               className="md:hidden p-2 rounded-lg hover:bg-gray-100"
               onClick={() => setCollapsed(!collapsed)}
@@ -87,27 +88,14 @@ export default function CustomerLayout({ children }) {
               <Menu className="h-6 w-6 text-gray-700" />
             </button>
 
-            {/* Título */}
             <h1 className="text-lg font-semibold text-gray-800">
               Dashboard Cliente
             </h1>
-
-            {/* Barra derecha: búsqueda / perfil */}
-            <div className="flex items-center gap-3">
-              <input
-                type="text"
-                placeholder="Buscar..."
-                className="hidden md:block rounded-lg border px-3 py-1 text-sm focus:ring-2 focus:ring-blue-500"
-              />
-              {/* Aquí puedes usar <UserButton /> de Clerk */}
-              <div className="w-8 h-8 rounded-full bg-gray-300"></div>
-            </div>
           </div>
         </header>
 
-        {/* Contenido principal */}
         <main className="flex-1 p-6">{children}</main>
       </div>
-    </div>
+    </>
   );
 }

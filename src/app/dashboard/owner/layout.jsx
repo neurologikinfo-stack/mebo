@@ -22,7 +22,7 @@ export default function OwnerLayout({ children }) {
   const [collapsed, setCollapsed] = useState(false);
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
+    <>
       {/* Sidebar */}
       <aside
         className={`${
@@ -47,7 +47,6 @@ export default function OwnerLayout({ children }) {
           </button>
         </div>
 
-        {/* Menú */}
         <nav className="px-2 py-4 space-y-1">
           {menuItems.map((item) => {
             const active = pathname === item.href;
@@ -70,7 +69,7 @@ export default function OwnerLayout({ children }) {
         </nav>
       </aside>
 
-      {/* Contenido principal */}
+      {/* Main */}
       <div className="flex flex-col flex-1">
         <header className="sticky top-0 z-20 w-full bg-white border-b border-gray-200 shadow-sm">
           <div className="flex items-center justify-between px-4 py-3">
@@ -88,6 +87,6 @@ export default function OwnerLayout({ children }) {
 
         <main className="flex-1 p-6">{children}</main>
       </div>
-    </div>
+    </>
   );
 }

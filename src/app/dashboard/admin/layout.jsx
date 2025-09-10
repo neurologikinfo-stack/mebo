@@ -10,6 +10,8 @@ import {
   Users,
   Briefcase,
   BarChart3,
+  User,
+  Settings,
 } from "lucide-react";
 
 const menuItems = [
@@ -17,6 +19,10 @@ const menuItems = [
   { name: "Usuarios", href: "/dashboard/admin/users", icon: Users },
   { name: "Negocios", href: "/dashboard/admin/business", icon: Briefcase },
   { name: "Reportes", href: "/dashboard/admin/reports", icon: BarChart3 },
+
+  // 👇 nuevos
+  { name: "Perfil", href: "/dashboard/admin/profile", icon: User },
+  { name: "Configuración", href: "/dashboard/admin/settings", icon: Settings },
 ];
 
 export default function AdminLayout({ children }) {
@@ -24,7 +30,7 @@ export default function AdminLayout({ children }) {
   const [collapsed, setCollapsed] = useState(false);
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
+    <>
       {/* Sidebar */}
       <aside
         className={`${
@@ -47,7 +53,6 @@ export default function AdminLayout({ children }) {
           </button>
         </div>
 
-        {/* Menú */}
         <nav className="px-2 py-4 space-y-1">
           {menuItems.map((item) => {
             const active = pathname === item.href;
@@ -70,7 +75,7 @@ export default function AdminLayout({ children }) {
         </nav>
       </aside>
 
-      {/* Main con Navbar superior */}
+      {/* Main */}
       <div className="flex flex-col flex-1">
         <header className="sticky top-0 z-20 w-full bg-white border-b border-gray-200 shadow-sm">
           <div className="flex items-center justify-between px-4 py-3">
@@ -80,25 +85,14 @@ export default function AdminLayout({ children }) {
             >
               <Menu className="h-6 w-6 text-gray-700" />
             </button>
-
             <h1 className="text-lg font-semibold text-gray-800">
               Dashboard Admin
             </h1>
-
-            <div className="flex items-center gap-3">
-              <input
-                type="text"
-                placeholder="Buscar..."
-                className="hidden md:block rounded-lg border px-3 py-1 text-sm focus:ring-2 focus:ring-blue-500"
-              />
-              <div className="w-8 h-8 rounded-full bg-gray-300"></div>
-            </div>
           </div>
         </header>
 
-        {/* Contenido principal */}
         <main className="flex-1 p-6">{children}</main>
       </div>
-    </div>
+    </>
   );
 }
