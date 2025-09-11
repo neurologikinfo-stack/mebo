@@ -51,9 +51,10 @@ export default function Home() {
 
       let query = supabase
         .from("businesses")
-        .select("id,name,slug,phone,email,created_at,description,created_by", {
-          count: "exact",
-        });
+        .select(
+          "id,name,slug,phone,email,created_at,description,created_by,logo_url",
+          { count: "exact" }
+        );
 
       const term = q.trim();
       if (term) {
@@ -112,7 +113,9 @@ export default function Home() {
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Negocios</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">
+            Negocios
+          </h1>
           <p className="text-sm text-muted-foreground">
             Listado desde tu base de datos en Supabase.
           </p>
@@ -120,7 +123,7 @@ export default function Home() {
         {isLoaded && isSignedIn && isAdmin && (
           <Button
             onClick={handleSync}
-            className="bg-blue-600 hover:bg-blue-500"
+            className="bg-primary text-primary-foreground hover:opacity-90"
           >
             Sincronizar Usuarios
           </Button>
@@ -148,9 +151,22 @@ export default function Home() {
                 >
                   <CardHeader>
                     <div className="flex items-center justify-between">
-                      <CardTitle className="line-clamp-1">
-                        {b.name || "Sin nombre"}
-                      </CardTitle>
+                      <div className="flex items-center gap-3">
+                        {b.logo_url ? (
+                          <img
+                            src={b.logo_url}
+                            alt={b.name}
+                            className="h-10 w-10 rounded-full object-cover border"
+                          />
+                        ) : (
+                          <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 font-medium">
+                            {b.name?.charAt(0).toUpperCase()}
+                          </div>
+                        )}
+                        <CardTitle className="line-clamp-1">
+                          {b.name || "Sin nombre"}
+                        </CardTitle>
+                      </div>
                       <Badge variant="outline">
                         {formatDate(b.created_at)}
                       </Badge>
@@ -160,11 +176,11 @@ export default function Home() {
 
                   <CardContent>
                     {b.description && (
-                      <p className="line-clamp-2 text-sm text-gray-600 mb-2">
+                      <p className="line-clamp-2 text-sm text-muted-foreground mb-2">
                         {b.description}
                       </p>
                     )}
-                    <div className="space-y-1 text-sm text-gray-600">
+                    <div className="space-y-1 text-sm text-muted-foreground">
                       {b.phone && <p>📞 {b.phone}</p>}
                       {b.email && <p>✉️ {b.email}</p>}
                     </div>
@@ -264,6 +280,7 @@ function SkeletonGrid() {
 }
 
 function EmptyState({ hasQuery, clear }) {
+  const router = useRouter();
   return (
     <Card className="text-center py-10">
       <CardContent>
