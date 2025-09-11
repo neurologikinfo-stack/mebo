@@ -26,7 +26,7 @@ export default function CustomerProfilePage() {
       const { data, error } = await supabase
         .from("profiles")
         .select("full_name, email, phone, avatar_url")
-        .eq("clerk_id", `${user.id}`) // 👈 aseguramos string
+        .eq("clerk_id", `${user.id}`)
         .maybeSingle();
 
       if (!error && data) {
@@ -86,12 +86,11 @@ export default function CustomerProfilePage() {
     const fileExt = file.name.split(".").pop();
     const filePath = `${user.id}/avatar.${fileExt}`;
 
-    // Subir archivo
     const { error: uploadError } = await supabase.storage
       .from("avatars")
       .upload(filePath, file, {
         cacheControl: "3600",
-        upsert: true, // 👈 sobreescribe si ya existe
+        upsert: true,
       });
 
     if (uploadError) {
@@ -99,12 +98,10 @@ export default function CustomerProfilePage() {
       return;
     }
 
-    // Obtener URL pública
     const {
       data: { publicUrl },
     } = supabase.storage.from("avatars").getPublicUrl(filePath);
 
-    // Guardar en DB
     const { error } = await supabase
       .from("profiles")
       .update({ avatar_url: publicUrl })
@@ -120,12 +117,12 @@ export default function CustomerProfilePage() {
 
   return (
     <div className="space-y-8 max-w-lg mx-auto">
-      <h1 className="text-2xl font-bold text-gray-800">Mi perfil</h1>
+      <h1 className="text-2xl font-bold text-foreground">Mi perfil</h1>
 
       {message && (
         <p
           className={`text-sm ${
-            message.startsWith("✅") ? "text-green-600" : "text-red-600"
+            message.startsWith("✅") ? "text-green-600" : "text-destructive"
           }`}
         >
           {message}
@@ -133,7 +130,7 @@ export default function CustomerProfilePage() {
       )}
 
       {loading ? (
-        <p>Cargando...</p>
+        <p className="text-muted-foreground">Cargando...</p>
       ) : (
         <form onSubmit={handleSave} className="space-y-6">
           {/* Avatar */}
@@ -141,24 +138,24 @@ export default function CustomerProfilePage() {
             <img
               src={profile.avatar_url || "/default-avatar.png"}
               alt="Avatar"
-              className="w-20 h-20 rounded-full border object-cover"
+              className="w-20 h-20 rounded-full border border-border object-cover"
             />
             <div>
-              <label className="block text-sm font-medium text-gray-700">
+              <label className="block text-sm font-medium text-muted-foreground">
                 Cambiar avatar
               </label>
               <input
                 type="file"
                 accept="image/*"
                 onChange={handleAvatarUpload}
-                className="mt-1 block text-sm"
+                className="mt-1 block text-sm text-muted-foreground"
               />
             </div>
           </div>
 
           {/* Nombre */}
           <div>
-            <label className="block text-sm font-medium text-gray-700">
+            <label className="block text-sm font-medium text-muted-foreground">
               Nombre completo
             </label>
             <input
@@ -167,26 +164,26 @@ export default function CustomerProfilePage() {
               onChange={(e) =>
                 setProfile({ ...profile, full_name: e.target.value })
               }
-              className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 shadow-sm focus:ring-2 focus:ring-blue-500"
+              className="mt-1 block w-full rounded-lg border border-border bg-background px-3 py-2 shadow-sm focus:ring-2 focus:ring-primary"
             />
           </div>
 
           {/* Email */}
           <div>
-            <label className="block text-sm font-medium text-gray-700">
+            <label className="block text-sm font-medium text-muted-foreground">
               Email
             </label>
             <input
               type="email"
               value={profile.email}
               disabled
-              className="mt-1 block w-full rounded-lg border border-gray-200 bg-gray-100 px-3 py-2 shadow-sm"
+              className="mt-1 block w-full rounded-lg border border-border bg-muted px-3 py-2 shadow-sm text-muted-foreground"
             />
           </div>
 
           {/* Teléfono */}
           <div>
-            <label className="block text-sm font-medium text-gray-700">
+            <label className="block text-sm font-medium text-muted-foreground">
               Teléfono
             </label>
             <input
@@ -196,14 +193,14 @@ export default function CustomerProfilePage() {
                 setProfile({ ...profile, phone: e.target.value })
               }
               placeholder="Ej: +1 506 555 1234"
-              className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 shadow-sm focus:ring-2 focus:ring-blue-500"
+              className="mt-1 block w-full rounded-lg border border-border bg-background px-3 py-2 shadow-sm focus:ring-2 focus:ring-primary"
             />
           </div>
 
           <button
             type="submit"
             disabled={saving}
-            className="rounded-lg bg-blue-600 px-4 py-2 text-sm text-white shadow hover:bg-blue-500 disabled:opacity-50"
+            className="rounded-lg bg-primary text-primary-foreground px-4 py-2 text-sm shadow hover:opacity-90 disabled:opacity-50"
           >
             {saving ? "Guardando..." : "Guardar cambios"}
           </button>
