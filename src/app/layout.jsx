@@ -23,7 +23,8 @@ export default function RootLayout({ children }) {
       >
         <Providers>
           <Navbar />
-          <main className="p-6">{children}</main>
+          {/* 🔹 Dejamos que cada layout interno maneje su propio main */}
+          {children}
         </Providers>
       </body>
     </html>

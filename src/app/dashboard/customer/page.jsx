@@ -52,57 +52,57 @@ export default function CustomerDashboard() {
 
   return (
     <div className="space-y-8">
-      <h1 className="text-2xl font-bold text-gray-800">
+      <h1 className="text-2xl font-bold text-foreground">
         Bienvenido {user?.firstName || "Cliente"}
       </h1>
 
       {/* KPIs */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-        <div className="p-6 bg-white rounded-xl shadow border">
-          <h2 className="text-sm font-medium text-gray-500">
+        <div className="p-6 bg-card text-card-foreground rounded-xl shadow border border-border">
+          <h2 className="text-sm font-medium text-muted-foreground">
             Citas confirmadas
           </h2>
           <p className="text-2xl font-semibold text-green-600">
             {loading ? "…" : stats.confirmed}
           </p>
         </div>
-        <div className="p-6 bg-white rounded-xl shadow border">
-          <h2 className="text-sm font-medium text-gray-500">
+        <div className="p-6 bg-card text-card-foreground rounded-xl shadow border border-border">
+          <h2 className="text-sm font-medium text-muted-foreground">
             Citas pendientes
           </h2>
           <p className="text-2xl font-semibold text-yellow-600">
             {loading ? "…" : stats.pending}
           </p>
         </div>
-        <div className="p-6 bg-white rounded-xl shadow border">
-          <h2 className="text-sm font-medium text-gray-500">
+        <div className="p-6 bg-card text-card-foreground rounded-xl shadow border border-border">
+          <h2 className="text-sm font-medium text-muted-foreground">
             Citas canceladas
           </h2>
-          <p className="text-2xl font-semibold text-gray-500">
+          <p className="text-2xl font-semibold text-muted-foreground">
             {loading ? "…" : stats.cancelled}
           </p>
         </div>
       </div>
 
       {/* Accesos rápidos */}
-      <div className="p-6 bg-white rounded-xl shadow border">
+      <div className="p-6 bg-card text-card-foreground rounded-xl shadow border border-border">
         <h2 className="text-lg font-semibold mb-4">Accesos rápidos</h2>
-        <div className="flex gap-4">
+        <div className="flex gap-4 flex-wrap">
           <Link
             href="/dashboard/customer/appointments"
-            className="rounded-lg bg-blue-600 px-4 py-2 text-sm text-white shadow hover:bg-blue-500"
+            className="rounded-lg bg-primary text-primary-foreground px-4 py-2 text-sm shadow hover:opacity-90"
           >
             Ver mis citas
           </Link>
           <Link
             href="/dashboard/customer/profile"
-            className="rounded-lg bg-gray-200 px-4 py-2 text-sm text-gray-700 hover:bg-gray-300"
+            className="rounded-lg bg-secondary text-secondary-foreground px-4 py-2 text-sm shadow hover:opacity-90"
           >
             Mi perfil
           </Link>
           <Link
             href="/dashboard/customer/settings"
-            className="rounded-lg bg-gray-200 px-4 py-2 text-sm text-gray-700 hover:bg-gray-300"
+            className="rounded-lg bg-secondary text-secondary-foreground px-4 py-2 text-sm shadow hover:opacity-90"
           >
             Configuración
           </Link>

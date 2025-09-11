@@ -86,24 +86,24 @@ export default function BusinessListPage() {
   }
 
   return (
-    <div>
+    <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
-        <h1 className="text-2xl font-bold tracking-tight text-gray-800">
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold tracking-tight text-foreground">
           Negocios
         </h1>
         <Link href="/dashboard/admin/business/new">
-          <Button className="bg-blue-600 hover:bg-blue-500">
+          <Button className="bg-primary hover:bg-primary/90 text-primary-foreground">
             Crear negocio
           </Button>
         </Link>
       </div>
 
-      {loading && <p>Cargando...</p>}
-      {err && <p className="text-red-600">{err}</p>}
+      {loading && <p className="text-muted-foreground">Cargando...</p>}
+      {err && <p className="text-destructive">{err}</p>}
 
       {/* Tabla */}
-      <div className="overflow-hidden rounded-xl border border-gray-200 shadow-sm bg-white">
+      <div className="overflow-hidden rounded-xl border border-border shadow-sm bg-card text-card-foreground">
         <Table>
           <TableHeader>
             <TableRow>
@@ -118,17 +118,20 @@ export default function BusinessListPage() {
           </TableHeader>
           <TableBody>
             {businesses.map((b) => (
-              <TableRow key={b.id}>
+              <TableRow
+                key={b.id}
+                className="hover:bg-muted/50 transition-colors"
+              >
                 {/* Logo */}
                 <TableCell>
                   {b.logo_url ? (
                     <img
                       src={b.logo_url}
                       alt={b.name}
-                      className="h-10 w-10 rounded-full object-cover border"
+                      className="h-10 w-10 rounded-full object-cover border border-border"
                     />
                   ) : (
-                    <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 font-medium">
+                    <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center text-muted-foreground font-medium">
                       {b.name?.charAt(0).toUpperCase()}
                     </div>
                   )}
@@ -141,9 +144,13 @@ export default function BusinessListPage() {
                 <TableCell>{b.phone || "—"}</TableCell>
                 <TableCell>
                   {b.deleted_at ? (
-                    <span className="text-red-600 font-medium">Eliminado</span>
+                    <span className="text-destructive font-medium">
+                      Eliminado
+                    </span>
                   ) : (
-                    <span className="text-green-600 font-medium">Activo</span>
+                    <span className="text-green-600 dark:text-green-400 font-medium">
+                      Activo
+                    </span>
                   )}
                 </TableCell>
 
@@ -152,7 +159,7 @@ export default function BusinessListPage() {
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button variant="ghost" size="icon">
-                        <MoreHorizontal className="h-5 w-5 text-gray-600" />
+                        <MoreHorizontal className="h-5 w-5 text-muted-foreground" />
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
@@ -176,7 +183,7 @@ export default function BusinessListPage() {
                         <DropdownMenuItem
                           onClick={() => handleRestore(b.id)}
                           disabled={processingId === b.id}
-                          className="text-green-600"
+                          className="text-green-600 dark:text-green-400"
                         >
                           {processingId === b.id ? "Restaurando…" : "Restaurar"}
                         </DropdownMenuItem>
@@ -184,7 +191,7 @@ export default function BusinessListPage() {
                         <DropdownMenuItem
                           onClick={() => handleDelete(b.id)}
                           disabled={processingId === b.id}
-                          className="text-red-600"
+                          className="text-destructive"
                         >
                           {processingId === b.id ? "Eliminando…" : "Eliminar"}
                         </DropdownMenuItem>

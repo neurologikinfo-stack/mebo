@@ -27,7 +27,6 @@ export default function OwnerBusinessesPage() {
       return;
     }
 
-    // Solo negocios activos (deleted_at IS NULL)
     const { data, error } = await supabase
       .from("businesses")
       .select("id, name, slug, phone, email, created_at, logo_url, deleted_at")
@@ -50,7 +49,6 @@ export default function OwnerBusinessesPage() {
     setDeletingId(id);
 
     try {
-      // 👇 Llamamos a la API segura que hace el soft delete con supabaseServer()
       const res = await fetch(`/api/businesses/${id}/delete`, {
         method: "DELETE",
       });
@@ -58,7 +56,6 @@ export default function OwnerBusinessesPage() {
 
       if (!result.ok) throw new Error(result.error);
 
-      // Actualizamos listado local
       setBusinesses((prev) => prev.filter((b) => b.id !== id));
     } catch (e) {
       alert("Error eliminando negocio: " + e.message);
@@ -70,26 +67,28 @@ export default function OwnerBusinessesPage() {
   return (
     <div className="space-y-8">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-800">Mis Negocios</h1>
+        <h1 className="text-2xl font-bold text-foreground">Mis Negocios</h1>
         <Link
           href="/dashboard/owner/businesses/new"
-          className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow hover:bg-blue-500"
+          className="rounded-lg bg-primary text-primary-foreground px-4 py-2 text-sm font-medium shadow hover:opacity-90"
         >
           + Crear negocio
         </Link>
       </div>
 
-      {loading && <p>Cargando...</p>}
-      {err && <p className="text-red-600">{err}</p>}
+      {loading && <p className="text-muted-foreground">Cargando...</p>}
+      {err && <p className="text-destructive">{err}</p>}
 
-      <div className="p-6 bg-white rounded-xl shadow border">
+      <div className="p-6 bg-card text-card-foreground rounded-xl shadow border border-border">
         <h2 className="text-lg font-semibold mb-4">Listado de negocios</h2>
 
         {businesses.length === 0 && !loading ? (
-          <p className="text-gray-500">No tienes negocios registrados.</p>
+          <p className="text-muted-foreground">
+            No tienes negocios registrados.
+          </p>
         ) : (
-          <table className="min-w-full divide-y divide-gray-200 text-sm">
-            <thead className="bg-gray-50">
+          <table className="min-w-full divide-y divide-border text-sm">
+            <thead className="bg-muted text-muted-foreground">
               <tr>
                 <th className="px-4 py-3 text-left">Logo</th>
                 <th className="px-4 py-3 text-left">Nombre</th>
@@ -99,23 +98,23 @@ export default function OwnerBusinessesPage() {
                 <th className="px-4 py-3 text-left">Acciones</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200">
+            <tbody className="divide-y divide-border">
               {businesses.map((b) => (
-                <tr key={b.id}>
+                <tr key={b.id} className="hover:bg-muted/50 transition">
                   <td className="px-4 py-3">
                     {b.logo_url ? (
                       <img
                         src={b.logo_url}
                         alt={b.name}
-                        className="h-10 w-10 rounded-full object-cover border"
+                        className="h-10 w-10 rounded-full object-cover border border-border"
                       />
                     ) : (
-                      <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-500">
+                      <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center text-muted-foreground">
                         {b.name.charAt(0)}
                       </div>
                     )}
                   </td>
-                  <td className="px-4 py-3 font-medium text-gray-800">
+                  <td className="px-4 py-3 font-medium text-foreground">
                     {b.name}
                   </td>
                   <td className="px-4 py-3">{b.phone || "—"}</td>
@@ -126,14 +125,14 @@ export default function OwnerBusinessesPage() {
                   <td className="px-4 py-3 flex gap-2">
                     <Link
                       href={`/dashboard/owner/businesses/${b.id}`}
-                      className="rounded-lg bg-gray-100 px-3 py-1 text-sm text-gray-700 hover:bg-gray-200"
+                      className="rounded-lg bg-secondary text-secondary-foreground px-3 py-1 text-sm hover:opacity-90"
                     >
                       Editar
                     </Link>
                     <button
                       onClick={() => handleDelete(b.id)}
                       disabled={deletingId === b.id}
-                      className="rounded-lg bg-red-600 px-3 py-1 text-sm text-white hover:bg-red-500 disabled:opacity-50"
+                      className="rounded-lg bg-destructive text-destructive-foreground px-3 py-1 text-sm hover:opacity-90 disabled:opacity-50"
                     >
                       {deletingId === b.id ? "Eliminando…" : "Eliminar"}
                     </button>

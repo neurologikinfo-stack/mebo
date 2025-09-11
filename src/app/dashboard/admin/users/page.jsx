@@ -21,71 +21,70 @@ export default function UsersPage() {
     const data = await res.json();
     alert(data.message || data.error);
 
-    // refrescar UI después del cambio
     setUsers((prev) =>
       prev.map((u) => (u.clerk_id === clerk_id ? { ...u, role } : u))
     );
   }
 
   return (
-    <div>
+    <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
-        <h1 className="text-2xl font-bold tracking-tight text-gray-800">
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold tracking-tight text-foreground">
           Usuarios
         </h1>
-        <span className="text-sm text-gray-500">
+        <span className="text-sm text-muted-foreground">
           Total: {users.length} usuarios
         </span>
       </div>
 
       {/* Tabla */}
-      <div className="overflow-hidden rounded-xl border border-gray-200 shadow-sm bg-white">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
+      <div className="overflow-hidden rounded-xl border border-border shadow-sm bg-card text-card-foreground">
+        <table className="min-w-full divide-y divide-border text-sm">
+          <thead className="bg-muted">
             <tr>
-              <th className="px-6 py-3 text-left text-sm font-semibold text-gray-600">
+              <th className="px-6 py-3 text-left font-semibold text-muted-foreground">
                 Email
               </th>
-              <th className="px-6 py-3 text-left text-sm font-semibold text-gray-600">
+              <th className="px-6 py-3 text-left font-semibold text-muted-foreground">
                 Nombre
               </th>
-              <th className="px-6 py-3 text-left text-sm font-semibold text-gray-600">
+              <th className="px-6 py-3 text-left font-semibold text-muted-foreground">
                 Rol
               </th>
-              <th className="px-6 py-3 text-left text-sm font-semibold text-gray-600">
+              <th className="px-6 py-3 text-left font-semibold text-muted-foreground">
                 Acción
               </th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100 bg-white">
+          <tbody className="divide-y divide-border">
             {users.map((u) => (
-              <tr key={u.id} className="hover:bg-gray-50">
-                <td className="px-6 py-4 text-sm text-gray-800">{u.email}</td>
-                <td className="px-6 py-4 text-sm text-gray-600">
+              <tr key={u.id} className="hover:bg-muted/50 transition">
+                <td className="px-6 py-4">{u.email}</td>
+                <td className="px-6 py-4 text-muted-foreground">
                   {u.full_name || "—"}
                 </td>
-                <td className="px-6 py-4 text-sm">
+                <td className="px-6 py-4">
                   <span
                     className={`px-2 py-1 rounded-full text-xs font-medium
                       ${
                         u.role === "admin"
-                          ? "bg-red-100 text-red-700"
+                          ? "bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400"
                           : u.role === "owner"
-                          ? "bg-blue-100 text-blue-700"
+                          ? "bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400"
                           : u.role === "staff"
-                          ? "bg-green-100 text-green-700"
-                          : "bg-gray-100 text-gray-700"
+                          ? "bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-400"
+                          : "bg-muted text-muted-foreground"
                       }`}
                   >
                     {u.role}
                   </span>
                 </td>
-                <td className="px-6 py-4 text-sm">
+                <td className="px-6 py-4">
                   <select
                     value={u.role}
                     onChange={(e) => updateRole(u.clerk_id, e.target.value)}
-                    className="rounded-lg border border-gray-300 bg-white px-2 py-1 text-sm shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
+                    className="rounded-lg border border-input bg-background px-2 py-1 text-sm shadow-sm focus:border-ring focus:ring-2 focus:ring-ring"
                   >
                     <option value="owner">Owner</option>
                     <option value="customer">Customer</option>

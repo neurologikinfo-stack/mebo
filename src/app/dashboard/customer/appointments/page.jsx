@@ -101,28 +101,28 @@ export default function AppointmentsPage() {
 
   return (
     <div className="space-y-8">
-      <h1 className="text-2xl font-bold text-gray-800">Mis citas</h1>
+      <h1 className="text-2xl font-bold text-foreground">Mis citas</h1>
 
       {message && (
         <div
           className={`p-3 rounded-lg text-sm ${
             message.type === "success"
-              ? "bg-green-100 text-green-800"
-              : "bg-red-100 text-red-800"
+              ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
+              : "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
           }`}
         >
           {message.text}
         </div>
       )}
 
-      <div className="p-6 bg-white rounded-xl shadow border">
+      <div className="p-6 bg-card text-card-foreground rounded-xl shadow border border-border">
         <h2 className="text-lg font-semibold mb-4">Últimas citas</h2>
 
-        {loading && <p>Cargando...</p>}
-        {err && <p className="text-red-600">{err}</p>}
+        {loading && <p className="text-muted-foreground">Cargando...</p>}
+        {err && <p className="text-destructive">{err}</p>}
 
-        <table className="min-w-full divide-y divide-gray-200 text-sm">
-          <thead className="bg-gray-50">
+        <table className="min-w-full divide-y divide-border text-sm">
+          <thead className="bg-muted text-muted-foreground">
             <tr>
               <th className="px-4 py-3 text-left">Servicio</th>
               <th className="px-4 py-3 text-left">Negocio</th>
@@ -132,9 +132,9 @@ export default function AppointmentsPage() {
               <th className="px-4 py-3 text-left">Acción</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-200">
+          <tbody className="divide-y divide-border">
             {appointments.map((a) => (
-              <tr key={a.id}>
+              <tr key={a.id} className="hover:bg-muted/50 transition">
                 <td className="px-4 py-3">{a.services?.name}</td>
                 <td className="px-4 py-3">{a.businesses?.name}</td>
                 <td className="px-4 py-3">{a.staff?.name}</td>
@@ -145,10 +145,10 @@ export default function AppointmentsPage() {
                   <span
                     className={`px-3 py-1 rounded-full text-xs font-medium ${
                       a.status === "confirmed"
-                        ? "bg-green-100 text-green-700"
+                        ? "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-200"
                         : a.status === "pending"
-                        ? "bg-yellow-100 text-yellow-700"
-                        : "bg-gray-200 text-gray-700"
+                        ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-200"
+                        : "bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-200"
                     }`}
                   >
                     {a.status}
@@ -158,7 +158,7 @@ export default function AppointmentsPage() {
                   <select
                     defaultValue={a.status}
                     onChange={(e) => handleStatusChange(a, e.target.value)}
-                    className="w-36 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:outline-none"
+                    className="w-36 rounded-lg border border-border bg-background px-3 py-2 text-sm shadow-sm focus:outline-none"
                   >
                     {a.status === "cancelled" ? (
                       <>
@@ -180,7 +180,9 @@ export default function AppointmentsPage() {
         </table>
 
         {appointments.length === 0 && !loading && (
-          <p className="text-gray-500 mt-4">No tienes citas registradas.</p>
+          <p className="text-muted-foreground mt-4">
+            No tienes citas registradas.
+          </p>
         )}
       </div>
     </div>

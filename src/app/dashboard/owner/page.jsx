@@ -118,12 +118,12 @@ export default function OwnerDashboard() {
     <div className="space-y-8">
       {/* Header con botón */}
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-800">
+        <h1 className="text-2xl font-bold text-foreground">
           Bienvenido {user?.firstName || "Propietario"}
         </h1>
         <Link
           href="/dashboard/owner/businesses/new"
-          className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow hover:bg-blue-500"
+          className="rounded-lg bg-primary text-primary-foreground px-4 py-2 text-sm font-medium shadow hover:opacity-90"
         >
           + Crear negocio
         </Link>
@@ -131,20 +131,26 @@ export default function OwnerDashboard() {
 
       {/* KPIs */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-        <div className="p-6 bg-white rounded-xl shadow border">
-          <h2 className="text-sm font-medium text-gray-500">Mis Negocios</h2>
-          <p className="text-2xl font-semibold text-blue-600">
+        <div className="p-6 bg-card text-card-foreground rounded-xl shadow border border-border">
+          <h2 className="text-sm font-medium text-muted-foreground">
+            Mis Negocios
+          </h2>
+          <p className="text-2xl font-semibold text-primary">
             {loading ? "…" : stats.businesses}
           </p>
         </div>
-        <div className="p-6 bg-white rounded-xl shadow border">
-          <h2 className="text-sm font-medium text-gray-500">Citas totales</h2>
+        <div className="p-6 bg-card text-card-foreground rounded-xl shadow border border-border">
+          <h2 className="text-sm font-medium text-muted-foreground">
+            Citas Totales
+          </h2>
           <p className="text-2xl font-semibold text-green-600">
             {loading ? "…" : stats.appointments}
           </p>
         </div>
-        <div className="p-6 bg-white rounded-xl shadow border">
-          <h2 className="text-sm font-medium text-gray-500">Pagos recibidos</h2>
+        <div className="p-6 bg-card text-card-foreground rounded-xl shadow border border-border">
+          <h2 className="text-sm font-medium text-muted-foreground">
+            Pagos Recibidos
+          </h2>
           <p className="text-2xl font-semibold text-yellow-600">
             {loading ? "…" : stats.payments}
           </p>
@@ -152,10 +158,12 @@ export default function OwnerDashboard() {
       </div>
 
       {/* Últimos negocios */}
-      <div className="p-6 bg-white rounded-xl shadow border">
+      <div className="p-6 bg-card text-card-foreground rounded-xl shadow border border-border">
         <h2 className="text-lg font-semibold mb-4">Últimos negocios</h2>
         {businesses.length === 0 ? (
-          <p className="text-gray-500">Aún no tienes negocios registrados.</p>
+          <p className="text-muted-foreground">
+            Aún no tienes negocios registrados.
+          </p>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-6">
             {businesses.slice(0, 4).map((b) => (
@@ -167,10 +175,10 @@ export default function OwnerDashboard() {
                   <img
                     src={b.logo_url}
                     alt={b.name}
-                    className="h-16 w-16 rounded-full object-cover border"
+                    className="h-16 w-16 rounded-full object-cover border border-border"
                   />
                 ) : (
-                  <div className="h-16 w-16 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 text-lg font-bold">
+                  <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center text-muted-foreground text-lg font-bold">
                     {b.name.charAt(0)}
                   </div>
                 )}
@@ -182,15 +190,19 @@ export default function OwnerDashboard() {
       </div>
 
       {/* 📊 Gráfica de citas */}
-      <div className="p-6 bg-white rounded-xl shadow border">
+      <div className="p-6 bg-card text-card-foreground rounded-xl shadow border border-border">
         <h2 className="text-lg font-semibold mb-4">Citas por día</h2>
         {appointmentsChart.length === 0 ? (
-          <p className="text-gray-500">No hay datos de citas aún.</p>
+          <p className="text-muted-foreground">No hay datos de citas aún.</p>
         ) : (
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={appointmentsChart}>
-              <XAxis dataKey="name" />
-              <YAxis />
+              <CartesianGrid
+                strokeDasharray="3 3"
+                stroke="hsl(var(--border))"
+              />
+              <XAxis dataKey="name" stroke="currentColor" />
+              <YAxis stroke="currentColor" />
               <Tooltip />
               <Bar dataKey="citas" fill="#3b82f6" radius={[4, 4, 0, 0]} />
             </BarChart>
@@ -199,16 +211,19 @@ export default function OwnerDashboard() {
       </div>
 
       {/* 📊 Gráfica de pagos */}
-      <div className="p-6 bg-white rounded-xl shadow border">
+      <div className="p-6 bg-card text-card-foreground rounded-xl shadow border border-border">
         <h2 className="text-lg font-semibold mb-4">Pagos por mes</h2>
         {paymentsChart.length === 0 ? (
-          <p className="text-gray-500">No hay datos de pagos aún.</p>
+          <p className="text-muted-foreground">No hay datos de pagos aún.</p>
         ) : (
           <ResponsiveContainer width="100%" height={300}>
             <LineChart data={paymentsChart}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" />
-              <YAxis />
+              <CartesianGrid
+                strokeDasharray="3 3"
+                stroke="hsl(var(--border))"
+              />
+              <XAxis dataKey="name" stroke="currentColor" />
+              <YAxis stroke="currentColor" />
               <Tooltip />
               <Line
                 type="monotone"
@@ -222,24 +237,24 @@ export default function OwnerDashboard() {
       </div>
 
       {/* Accesos rápidos */}
-      <div className="p-6 bg-white rounded-xl shadow border">
+      <div className="p-6 bg-card text-card-foreground rounded-xl shadow border border-border">
         <h2 className="text-lg font-semibold mb-4">Accesos rápidos</h2>
         <div className="flex gap-4 flex-wrap">
           <Link
             href="/dashboard/owner/businesses"
-            className="rounded-lg bg-blue-600 px-4 py-2 text-sm text-white shadow hover:bg-blue-500"
+            className="rounded-lg bg-primary text-primary-foreground px-4 py-2 text-sm shadow hover:opacity-90"
           >
             Ver mis negocios
           </Link>
           <Link
             href="/dashboard/owner/appointments"
-            className="rounded-lg bg-gray-200 px-4 py-2 text-sm text-gray-700 hover:bg-gray-300"
+            className="rounded-lg bg-secondary text-secondary-foreground px-4 py-2 text-sm shadow hover:opacity-90"
           >
             Ver citas
           </Link>
           <Link
             href="/dashboard/owner/payments"
-            className="rounded-lg bg-gray-200 px-4 py-2 text-sm text-gray-700 hover:bg-gray-300"
+            className="rounded-lg bg-secondary text-secondary-foreground px-4 py-2 text-sm shadow hover:opacity-90"
           >
             Ver pagos
           </Link>
