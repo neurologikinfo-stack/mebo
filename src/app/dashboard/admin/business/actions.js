@@ -4,9 +4,6 @@ import { supabaseServer } from "@/utils/supabase/server";
 import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 
-// ==========================
-// Helpers
-// ==========================
 function slugify(s) {
   return s
     ?.normalize("NFD")
@@ -35,7 +32,7 @@ async function generateUniqueSlug(baseSlug, supabase) {
 }
 
 // ==========================
-// CREATE
+// CREATE (Admin)
 // ==========================
 async function createBusiness(formData) {
   const { userId } = await auth();
@@ -49,13 +46,66 @@ async function createBusiness(formData) {
   const email = formData.get("email")?.trim() || null;
   const description = formData.get("description")?.trim() || null;
 
+  // Ubicación
+  const address = formData.get("address")?.trim() || null;
+  const city = formData.get("city")?.trim() || null;
+  const province = formData.get("province")?.trim() || null;
+  const postal_code = formData.get("postal_code")?.trim() || null;
+  const country = formData.get("country")?.trim() || null;
+  const latitude = formData.get("latitude")?.trim() || null;
+  const longitude = formData.get("longitude")?.trim() || null;
+
+  // Owner seleccionado
+  const ownerId = formData.get("owner_id");
+
   if (!name) return { ok: false, error: "El nombre es obligatorio." };
+  if (!ownerId) return { ok: false, error: "Debes asignar un propietario." };
+
+  // Buscar datos del owner
+  const { data: owner, error: ownerError } = await supabase
+    .from("owners")
+    .select("id, clerk_id")
+    .eq("id", ownerId)
+    .maybeSingle();
+
+  if (ownerError || !owner) {
+    return { ok: false, error: "No se encontró el owner seleccionado." };
+  }
+
+  // Buscar profile del owner
+  const { data: profile, error: profileError } = await supabase
+    .from("profiles")
+    .select("id")
+    .eq("clerk_id", owner.clerk_id)
+    .maybeSingle();
+
+  if (profileError || !profile) {
+    return { ok: false, error: "No se encontró el profile del owner." };
+  }
 
   slug = await generateUniqueSlug(slug, supabase);
 
   const { data, error } = await supabase
     .from("businesses")
-    .insert([{ name, slug, phone, email, description, created_by: userId }])
+    .insert([
+      {
+        name,
+        slug,
+        phone,
+        email,
+        description,
+        address,
+        city,
+        province,
+        postal_code,
+        country,
+        latitude,
+        longitude,
+        owner_id: owner.id,
+        owner_clerk_id: owner.clerk_id,
+        created_by: profile.id, // 👈 el profile del owner
+      },
+    ])
     .select("id, slug")
     .single();
 
@@ -65,58 +115,6 @@ async function createBusiness(formData) {
 
 export async function createBusinessAction(prevState, formData) {
   const res = await createBusiness(formData);
-  if (!res.ok) return { error: res.error };
-  redirect("/dashboard/admin/business");
-}
-
-// ==========================
-// UPDATE
-// ==========================
-async function updateBusiness(id, formData) {
-  const { userId } = await auth();
-  if (!userId) return { ok: false, error: "Debes iniciar sesión." };
-
-  const supabase = supabaseServer();
-
-  const name = formData.get("name")?.trim();
-  const phone = formData.get("phone")?.trim() || null;
-  const email = formData.get("email")?.trim() || null;
-  const description = formData.get("description")?.trim() || null;
-
-  if (!name) return { ok: false, error: "El nombre es obligatorio." };
-
-  const { error } = await supabase
-    .from("businesses")
-    .update({ name, phone, email, description })
-    .eq("id", id);
-
-  if (error) return { ok: false, error: error.message };
-  return { ok: true };
-}
-
-export async function updateBusinessAction(id, prevState, formData) {
-  const res = await updateBusiness(id, formData);
-  if (!res.ok) return { error: res.error };
-  redirect(`/dashboard/admin/business/${id}`);
-}
-
-// ==========================
-// DELETE
-// ==========================
-async function deleteBusiness(id) {
-  const { userId } = await auth();
-  if (!userId) return { ok: false, error: "Debes iniciar sesión." };
-
-  const supabase = supabaseServer();
-
-  const { error } = await supabase.from("businesses").delete().eq("id", id);
-
-  if (error) return { ok: false, error: error.message };
-  return { ok: true };
-}
-
-export async function deleteBusinessAction(id) {
-  const res = await deleteBusiness(id);
   if (!res.ok) return { error: res.error };
   redirect("/dashboard/admin/business");
 }

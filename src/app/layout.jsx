@@ -3,6 +3,7 @@ import Providers from "./providers";
 import Navbar from "./components/Navbar";
 import { Inter } from "next/font/google";
 import clsx from "clsx";
+import { Toaster } from "sonner"; // ✅ importar Toaster
 
 const inter = Inter({
   subsets: ["latin"],
@@ -25,6 +26,7 @@ export default function RootLayout({ children }) {
           <Navbar />
           {/* 🔹 Dejamos que cada layout interno maneje su propio main */}
           {children}
+          <Toaster richColors position="top-right" /> {/* ✅ Toaster global */}
         </Providers>
       </body>
     </html>
