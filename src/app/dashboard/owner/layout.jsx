@@ -9,12 +9,16 @@ import {
   LayoutDashboard,
   Home,
   DollarSign,
+  User,
+  Settings,
 } from "lucide-react";
 
 const menuItems = [
   { name: "Dashboard", href: "/dashboard/owner", icon: LayoutDashboard },
   { name: "Mis Negocios", href: "/dashboard/owner/businesses", icon: Home },
   { name: "Pagos", href: "/dashboard/owner/payments", icon: DollarSign },
+  { name: "Perfil", href: "/dashboard/owner/profile", icon: User },
+  { name: "Configuración", href: "/dashboard/owner/settings", icon: Settings },
 ];
 
 export default function OwnerLayout({ children }) {
@@ -27,9 +31,7 @@ export default function OwnerLayout({ children }) {
       <aside
         className={`${
           collapsed ? "w-20" : "w-64"
-        } fixed md:static inset-y-0 left-0 z-30 flex-shrink-0
-        bg-card text-card-foreground border-r border-border shadow-sm
-        transition-all duration-300`}
+        } flex-shrink-0 bg-card text-card-foreground border-r border-border shadow-sm transition-all duration-300 fixed md:static inset-y-0 left-0 z-30`}
       >
         <div className="flex items-center justify-between p-4 border-b border-border">
           {!collapsed && (
@@ -55,12 +57,11 @@ export default function OwnerLayout({ children }) {
               <Link
                 key={item.href}
                 href={item.href}
-                className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition
-                  ${
-                    active
-                      ? "bg-primary text-primary-foreground shadow"
-                      : "text-muted-foreground hover:bg-muted"
-                  }`}
+                className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition ${
+                  active
+                    ? "bg-primary text-primary-foreground shadow"
+                    : "text-muted-foreground hover:bg-muted"
+                }`}
               >
                 <Icon className="h-5 w-5 flex-shrink-0" />
                 {!collapsed && <span>{item.name}</span>}
@@ -71,11 +72,7 @@ export default function OwnerLayout({ children }) {
       </aside>
 
       {/* Main */}
-      <div
-        className={`flex flex-col flex-1 transition-all duration-300 ${
-          collapsed ? "md:ml-20" : "md:ml-64"
-        }`}
-      >
+      <div className="flex flex-col flex-1">
         <header className="sticky top-0 z-20 w-full bg-card border-b border-border shadow-sm">
           <div className="flex items-center justify-between px-4 py-3">
             <button

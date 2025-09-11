@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useUser } from "@clerk/nextjs";
 import { supabase } from "@/utils/supabase/client";
 
-export default function AdminProfilePage() {
+export default function OwnerProfilePage() {
   const { user } = useUser();
   const [profile, setProfile] = useState({
     full_name: "",
@@ -16,7 +16,7 @@ export default function AdminProfilePage() {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
 
-  // cargar perfil
+  // ✅ Cargar perfil
   useEffect(() => {
     if (!user) return;
 
@@ -49,7 +49,7 @@ export default function AdminProfilePage() {
     })();
   }, [user]);
 
-  // guardar cambios
+  // ✅ Guardar cambios
   async function handleSave(e) {
     e.preventDefault();
     if (!user) return;
@@ -72,13 +72,13 @@ export default function AdminProfilePage() {
     if (error) {
       setMessage("❌ Error al guardar: " + error.message);
     } else {
-      setMessage("✅ Perfil de administrador actualizado");
+      setMessage("✅ Perfil de propietario actualizado");
     }
 
     setTimeout(() => setMessage(""), 4000);
   }
 
-  // subir avatar
+  // ✅ Subir avatar
   async function handleAvatarUpload(e) {
     const file = e.target.files[0];
     if (!file || !user) return;
@@ -117,7 +117,7 @@ export default function AdminProfilePage() {
 
   return (
     <div className="space-y-8 max-w-lg mx-auto">
-      <h1 className="text-2xl font-bold text-gray-800">Perfil Admin</h1>
+      <h1 className="text-2xl font-bold text-foreground">Perfil Propietario</h1>
 
       {message && (
         <p
@@ -130,9 +130,12 @@ export default function AdminProfilePage() {
       )}
 
       {loading ? (
-        <p>Cargando...</p>
+        <p className="text-muted-foreground">Cargando...</p>
       ) : (
-        <form onSubmit={handleSave} className="space-y-6">
+        <form
+          onSubmit={handleSave}
+          className="space-y-6 p-6 bg-card text-card-foreground rounded-xl shadow border border-border"
+        >
           {/* Avatar */}
           <div className="flex items-center gap-4">
             <img
@@ -141,7 +144,7 @@ export default function AdminProfilePage() {
               className="w-20 h-20 rounded-full border object-cover"
             />
             <div>
-              <label className="block text-sm font-medium text-gray-700">
+              <label className="block text-sm font-medium">
                 Cambiar avatar
               </label>
               <input
@@ -155,37 +158,31 @@ export default function AdminProfilePage() {
 
           {/* Nombre */}
           <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Nombre completo
-            </label>
+            <label className="block text-sm font-medium">Nombre completo</label>
             <input
               type="text"
               value={profile.full_name}
               onChange={(e) =>
                 setProfile({ ...profile, full_name: e.target.value })
               }
-              className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 shadow-sm focus:ring-2 focus:ring-blue-500"
+              className="mt-1 block w-full rounded-lg border border-border bg-background px-3 py-2 shadow-sm focus:ring-2 focus:ring-primary"
             />
           </div>
 
           {/* Email */}
           <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Email
-            </label>
+            <label className="block text-sm font-medium">Email</label>
             <input
               type="email"
               value={profile.email}
               disabled
-              className="mt-1 block w-full rounded-lg border border-gray-200 bg-gray-100 px-3 py-2 shadow-sm"
+              className="mt-1 block w-full rounded-lg border border-border bg-muted px-3 py-2 shadow-sm"
             />
           </div>
 
           {/* Teléfono */}
           <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Teléfono
-            </label>
+            <label className="block text-sm font-medium">Teléfono</label>
             <input
               type="text"
               value={profile.phone}
@@ -193,14 +190,14 @@ export default function AdminProfilePage() {
                 setProfile({ ...profile, phone: e.target.value })
               }
               placeholder="Ej: +1 506 555 1234"
-              className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 shadow-sm focus:ring-2 focus:ring-blue-500"
+              className="mt-1 block w-full rounded-lg border border-border bg-background px-3 py-2 shadow-sm focus:ring-2 focus:ring-primary"
             />
           </div>
 
           <button
             type="submit"
             disabled={saving}
-            className="rounded-lg bg-blue-600 px-4 py-2 text-sm text-white shadow hover:bg-blue-500 disabled:opacity-50"
+            className="rounded-lg bg-primary text-primary-foreground px-4 py-2 text-sm shadow hover:opacity-90 disabled:opacity-50"
           >
             {saving ? "Guardando..." : "Guardar cambios"}
           </button>
