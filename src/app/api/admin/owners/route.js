@@ -19,13 +19,27 @@ export async function POST(req) {
     const { full_name, email, username, password } = body;
 
     // 🔎 Validaciones iniciales
-    if (!full_name || !email || !username || !password) {
+    if (!full_name) {
       return NextResponse.json(
-        {
-          ok: false,
-          error:
-            "Faltan datos obligatorios (full_name, email, username, password)",
-        },
+        { ok: false, error: "El campo full_name está vacío" },
+        { status: 400 }
+      );
+    }
+    if (!email) {
+      return NextResponse.json(
+        { ok: false, error: "El campo email está vacío" },
+        { status: 400 }
+      );
+    }
+    if (!username) {
+      return NextResponse.json(
+        { ok: false, error: "El campo username está vacío" },
+        { status: 400 }
+      );
+    }
+    if (!password) {
+      return NextResponse.json(
+        { ok: false, error: "El campo password está vacío" },
         { status: 400 }
       );
     }
@@ -41,18 +55,33 @@ export async function POST(req) {
       );
     }
 
-    if (password.length < 8) {
+    const strongPasswordRegex =
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&._-])[A-Za-z\d@$!%*?&._-]{8,}$/;
+
+    if (!strongPasswordRegex.test(password)) {
       return NextResponse.json(
-        { ok: false, error: "La contraseña debe tener mínimo 8 caracteres" },
+        {
+          ok: false,
+          error:
+            "La contraseña debe tener al menos 8 caracteres, incluir mayúscula, minúscula, número y un caracter especial.",
+        },
         { status: 400 }
       );
     }
+
+    // 📌 Debug extra
+    console.log("👉 Datos a enviar a Clerk:", {
+      email_addresses: [email],
+      username,
+      password,
+      first_name: full_name,
+    });
 
     // ✅ Crear usuario en Clerk
     let clerkUser;
     try {
       clerkUser = await clerkClient.users.createUser({
-        email_addresses: [email], // 👈 plural y array
+        email_addresses: [email],
         username,
         password,
         first_name: full_name,
@@ -119,7 +148,6 @@ export async function POST(req) {
       if (error) {
         console.error("❌ Error insertando owner en Supabase:", error);
 
-        // Errores comunes de Postgres
         if (error.code === "23505") {
           return NextResponse.json(
             {
