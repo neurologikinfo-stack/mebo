@@ -1,8 +1,11 @@
 "use client";
+
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
 export default function UsersPage() {
   const [users, setUsers] = useState([]);
+  const router = useRouter();
 
   useEffect(() => {
     (async () => {
@@ -59,7 +62,14 @@ export default function UsersPage() {
           </thead>
           <tbody className="divide-y divide-border">
             {users.map((u) => (
-              <tr key={u.id} className="hover:bg-muted/50 transition">
+              <tr
+                key={u.clerk_id}
+                className="hover:bg-muted/50 transition cursor-pointer"
+                onClick={() => {
+                  console.log("➡️ Clerk ID:", u.clerk_id); // 👈 solo consola
+                  router.push(`/dashboard/admin/users/${u.clerk_id}`);
+                }}
+              >
                 <td className="px-6 py-4">{u.email}</td>
                 <td className="px-6 py-4 text-muted-foreground">
                   {u.full_name || "—"}
@@ -83,7 +93,10 @@ export default function UsersPage() {
                 <td className="px-6 py-4">
                   <select
                     value={u.role}
-                    onChange={(e) => updateRole(u.clerk_id, e.target.value)}
+                    onChange={(e) => {
+                      e.stopPropagation(); // 👈 evita que al cambiar rol navegue
+                      updateRole(u.clerk_id, e.target.value);
+                    }}
                     className="rounded-lg border border-input bg-background px-2 py-1 text-sm shadow-sm focus:border-ring focus:ring-2 focus:ring-ring"
                   >
                     <option value="owner">Owner</option>

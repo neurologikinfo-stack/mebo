@@ -3,6 +3,49 @@ import { supabaseServer } from "@/utils/supabase/server";
 import { auth } from "@clerk/nextjs/server";
 
 // ==========================
+// GET: obtener un owner por ID
+// ==========================
+export async function GET(req, { params }) {
+  try {
+    const { id } = params;
+    if (!id) {
+      return NextResponse.json(
+        { ok: false, error: "Falta ID" },
+        { status: 400 }
+      );
+    }
+
+    const supabase = supabaseServer();
+    const { data, error } = await supabase
+      .from("owners")
+      .select("id, full_name, email, status, created_at")
+      .eq("id", id)
+      .maybeSingle();
+
+    if (error) {
+      return NextResponse.json(
+        { ok: false, error: error.message },
+        { status: 500 }
+      );
+    }
+
+    if (!data) {
+      return NextResponse.json(
+        { ok: false, error: "Owner no encontrado" },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json({ ok: true, data });
+  } catch (err) {
+    return NextResponse.json(
+      { ok: false, error: err.message || "Error interno" },
+      { status: 500 }
+    );
+  }
+}
+
+// ==========================
 // PATCH: actualizar owner
 // ==========================
 export async function PATCH(req, { params }) {
@@ -19,11 +62,12 @@ export async function PATCH(req, { params }) {
     const body = await req.json();
     const { full_name, email } = body;
 
-    if (!id)
+    if (!id) {
       return NextResponse.json(
         { ok: false, error: "Falta ID" },
         { status: 400 }
       );
+    }
 
     const supabase = supabaseServer();
     const { data, error } = await supabase
@@ -33,11 +77,12 @@ export async function PATCH(req, { params }) {
       .select()
       .single();
 
-    if (error)
+    if (error) {
       return NextResponse.json(
         { ok: false, error: error.message },
         { status: 400 }
       );
+    }
 
     return NextResponse.json({ ok: true, data });
   } catch (err) {
@@ -62,20 +107,22 @@ export async function DELETE(req, { params }) {
     }
 
     const { id } = params;
-    if (!id)
+    if (!id) {
       return NextResponse.json(
         { ok: false, error: "Falta ID" },
         { status: 400 }
       );
+    }
 
     const supabase = supabaseServer();
     const { error } = await supabase.from("owners").delete().eq("id", id);
 
-    if (error)
+    if (error) {
       return NextResponse.json(
         { ok: false, error: error.message },
         { status: 400 }
       );
+    }
 
     return NextResponse.json({ ok: true });
   } catch (err) {

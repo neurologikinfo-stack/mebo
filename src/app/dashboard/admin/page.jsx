@@ -13,10 +13,10 @@ export default async function AdminHomePage() {
     .from("businesses")
     .select("*", { count: "exact", head: true });
 
-  // Últimos 5 usuarios
+  // Últimos 5 usuarios (incluyendo clerk_id)
   const { data: latestUsers } = await supabase
     .from("profiles")
-    .select("id, full_name, email, created_at")
+    .select("clerk_id, full_name, email, created_at") // 👈 usamos clerk_id
     .order("created_at", { ascending: false })
     .limit(5);
 
@@ -54,8 +54,13 @@ export default async function AdminHomePage() {
         <h2 className="text-lg font-semibold mb-4">Últimos usuarios</h2>
         <ul className="divide-y divide-border">
           {latestUsers?.map((u) => (
-            <li key={u.id} className="py-2 flex justify-between">
-              <span>{u.full_name || "Sin nombre"}</span>
+            <li key={u.clerk_id} className="py-2 flex justify-between">
+              <Link
+                href={`/dashboard/admin/users/${u.clerk_id}`} // 👈 link con clerk_id
+                className="hover:underline text-primary"
+              >
+                {u.full_name || "Sin nombre"}
+              </Link>
               <span className="text-muted-foreground text-sm">{u.email}</span>
             </li>
           ))}
@@ -74,7 +79,12 @@ export default async function AdminHomePage() {
         <ul className="divide-y divide-border">
           {latestBusinesses?.map((b) => (
             <li key={b.id} className="py-2 flex justify-between">
-              <span>{b.name}</span>
+              <Link
+                href={`/dashboard/admin/business/${b.id}`}
+                className="hover:underline text-primary"
+              >
+                {b.name}
+              </Link>
               <span className="text-muted-foreground text-sm">
                 {b.email || "Sin email"}
               </span>

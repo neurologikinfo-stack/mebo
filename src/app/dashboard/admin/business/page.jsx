@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { MoreHorizontal } from "lucide-react";
 
 // shadcn/ui
@@ -28,6 +28,7 @@ export default function BusinessListPage() {
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState("");
   const [processingId, setProcessingId] = useState(null);
+  const router = useRouter();
 
   useEffect(() => {
     fetchBusinesses();
@@ -92,11 +93,12 @@ export default function BusinessListPage() {
         <h1 className="text-2xl font-bold tracking-tight text-foreground">
           Negocios
         </h1>
-        <Link href="/dashboard/admin/business/new">
-          <Button className="bg-primary hover:bg-primary/90 text-primary-foreground">
-            Crear negocio
-          </Button>
-        </Link>
+        <Button
+          onClick={() => router.push("/dashboard/admin/business/new")}
+          className="bg-primary hover:bg-primary/90 text-primary-foreground"
+        >
+          Crear negocio
+        </Button>
       </div>
 
       {loading && <p className="text-muted-foreground">Cargando...</p>}
@@ -120,7 +122,11 @@ export default function BusinessListPage() {
             {businesses.map((b) => (
               <TableRow
                 key={b.id}
-                className="hover:bg-muted/50 transition-colors"
+                className="hover:bg-muted/50 transition-colors cursor-pointer"
+                onClick={() => {
+                  console.log("➡️ Business ID:", b.id); // 👈 solo consola
+                  router.push(`/dashboard/admin/business/${b.id}`);
+                }}
               >
                 {/* Logo */}
                 <TableCell>
@@ -155,7 +161,10 @@ export default function BusinessListPage() {
                 </TableCell>
 
                 {/* Acciones */}
-                <TableCell className="text-right">
+                <TableCell
+                  className="text-right"
+                  onClick={(e) => e.stopPropagation()} // 👈 evita que menú dispare navegación
+                >
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button variant="ghost" size="icon">
@@ -167,14 +176,14 @@ export default function BusinessListPage() {
                       <DropdownMenuSeparator />
                       <DropdownMenuItem
                         onClick={() =>
-                          (window.location.href = `/dashboard/admin/business/${b.id}`)
+                          router.push(`/dashboard/admin/business/${b.id}`)
                         }
                       >
                         Ver
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         onClick={() =>
-                          (window.location.href = `/dashboard/admin/business/${b.id}/edit`)
+                          router.push(`/dashboard/admin/business/${b.id}/edit`)
                         }
                       >
                         Editar
