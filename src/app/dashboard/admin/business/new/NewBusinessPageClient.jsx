@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useActionState, useEffect, useState } from "react";
 import { createBusinessAction } from "../actions";
 import { Button } from "@/components/ui/button";
-import AddOwnerModal from "./AddOwnerModal";
+import AddOwnerModal from "@/components/AddOwnerModal";
 
 export default function NewBusinessPageClient() {
   const [state, formAction, isPending] = useActionState(createBusinessAction, {

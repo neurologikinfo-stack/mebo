@@ -3,6 +3,40 @@ import { supabaseServer } from "@/utils/supabase/server";
 import { auth } from "@clerk/nextjs/server";
 import { clerkClient } from "@clerk/clerk-sdk-node";
 
+/**
+ * GET /api/admin/owners
+ * Devuelve todos los owners en Supabase
+ */
+export async function GET() {
+  try {
+    const supabase = supabaseServer();
+    const { data, error } = await supabase
+      .from("owners")
+      .select("id, full_name, email, status, created_at")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error("❌ Error cargando owners:", error);
+      return NextResponse.json(
+        { ok: false, error: error.message },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({ ok: true, data });
+  } catch (err) {
+    console.error("❌ Excepción en GET /owners:", err);
+    return NextResponse.json(
+      { ok: false, error: err.message },
+      { status: 500 }
+    );
+  }
+}
+
+/**
+ * POST /api/admin/owners
+ * Crea una invitación en Clerk y la guarda en Supabase
+ */
 export async function POST(req) {
   try {
     const { userId } = await auth();
@@ -25,11 +59,20 @@ export async function POST(req) {
       );
     }
 
+    // 🌍 redirect_url con fallback seguro
+    const baseUrl =
+      process.env.NEXT_PUBLIC_APP_URL?.trim() || "http://localhost:3000";
+    const redirectUrl = `${baseUrl}/dashboard/owner`;
+
     // Crear invitación en Clerk
     let invitation;
     try {
       invitation = await clerkClient.invitations.createInvitation({
         email_address: email.trim(),
+        redirect_url: redirectUrl,
+        public_metadata: {
+          role: "owner",
+        },
       });
       console.log("✅ Invitación creada en Clerk:", invitation.id);
     } catch (clerkErr) {
@@ -53,12 +96,12 @@ export async function POST(req) {
 
     if (!invitation?.id) {
       return NextResponse.json(
-        { ok: false, error: "Clerk no devolvió un ID de invitación válido" },
+        { ok: false, error: "Clerk no devolvió un ID válido" },
         { status: 500 }
       );
     }
 
-    // Guardamos en Supabase como pendiente
+    // Guardar en Supabase como pending
     try {
       const supabase = supabaseServer();
       const { data, error } = await supabase
@@ -85,7 +128,7 @@ export async function POST(req) {
       return NextResponse.json({
         ok: true,
         data,
-        invitationUrl: invitation.url, // 👈 ahora devolvemos el link
+        invitationUrl: invitation.url, // 👈 devolvemos el link de invitación
       });
     } catch (dbErr) {
       console.error("❌ Excepción al insertar en Supabase:", dbErr);
@@ -101,12 +144,25 @@ export async function POST(req) {
   } catch (err) {
     console.error("❌ Error en POST /owners:", err);
     return NextResponse.json(
-      {
-        ok: false,
-        error: "Error inesperado en servidor",
-        details: err.message,
-      },
+      { ok: false, error: err.message },
       { status: 500 }
     );
   }
+}
+
+/**
+ * Otros métodos no soportados
+ */
+export async function PUT() {
+  return NextResponse.json(
+    { ok: false, error: "Method Not Allowed" },
+    { status: 405 }
+  );
+}
+
+export async function DELETE() {
+  return NextResponse.json(
+    { ok: false, error: "Method Not Allowed" },
+    { status: 405 }
+  );
 }
