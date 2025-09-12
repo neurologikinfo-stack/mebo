@@ -14,16 +14,42 @@ export default function AddOwnerModal({ open, onClose, onCreated }) {
   const [passwordError, setPasswordError] = useState("");
   const [generatedPassword, setGeneratedPassword] = useState("");
 
-  // 🔑 Generador de contraseñas seguras
+  // 🔑 Generador de contraseñas seguras garantizadas
   function generatePassword(length = 12) {
-    const chars =
-      "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789@$!%*?&._-";
-    let pass = "";
-    for (let i = 0; i < length; i++) {
-      pass += chars.charAt(Math.floor(Math.random() * chars.length));
+    const upper = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    const lower = "abcdefghijklmnopqrstuvwxyz";
+    const numbers = "0123456789";
+    const symbols = "@$!%*?&._-"; // 👈 sin coma ni espacios
+
+    let password = "";
+    password += upper[Math.floor(Math.random() * upper.length)];
+    password += lower[Math.floor(Math.random() * lower.length)];
+    password += numbers[Math.floor(Math.random() * numbers.length)];
+    password += symbols[Math.floor(Math.random() * symbols.length)];
+
+    const all = upper + lower + numbers + symbols;
+    for (let i = password.length; i < length; i++) {
+      password += all[Math.floor(Math.random() * all.length)];
     }
-    setGeneratedPassword(pass);
-    toast.success(`🔐 Contraseña generada: ${pass}`);
+
+    // Mezclar para no dejar los obligatorios al inicio
+    password = password
+      .split("")
+      .sort(() => Math.random() - 0.5)
+      .join("");
+
+    setGeneratedPassword(password);
+    toast.success(`🔐 Contraseña generada: ${password}`);
+  }
+
+  // 🔍 Función describe como en el backend
+  function describe(value) {
+    if (value === null) return "null";
+    if (value === undefined) return "undefined";
+    if (typeof value === "string") {
+      return `"${value}" (string, len=${value.length})`;
+    }
+    return `${value} (${typeof value})`;
   }
 
   async function handleSubmit(e) {
@@ -35,25 +61,14 @@ export default function AddOwnerModal({ open, onClose, onCreated }) {
     const username = formData.get("username")?.trim();
     const password = generatedPassword || formData.get("password");
 
-    // ✅ Validaciones básicas en frontend
-    if (!full_name) {
-      toast.error("⚠️ El nombre completo no puede estar vacío");
-      return;
-    }
-    if (!email) {
-      toast.error("⚠️ El email no puede estar vacío");
-      return;
-    }
-    if (!username) {
-      toast.error("⚠️ El username no puede estar vacío");
-      return;
-    }
-    if (!password) {
-      toast.error("⚠️ La contraseña no puede estar vacía");
-      return;
-    }
+    // 📌 Log detallado del payload antes de enviar
+    console.log("📝 Payload enviado (detallado):", {
+      full_name: describe(full_name),
+      email: describe(email),
+      username: describe(username),
+      password: describe(password),
+    });
 
-    // Validación de fuerza de contraseña
     const passwordRegex =
       /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&._-])[A-Za-z\d@$!%*?&._-]{8,}$/;
 
@@ -66,14 +81,6 @@ export default function AddOwnerModal({ open, onClose, onCreated }) {
     } else {
       setPasswordError("");
     }
-
-    // 📌 Log del payload que se enviará al backend
-    console.log("📝 Payload enviado:", {
-      full_name,
-      email,
-      username,
-      password,
-    });
 
     try {
       const res = await fetch("/api/admin/owners", {
@@ -109,6 +116,16 @@ export default function AddOwnerModal({ open, onClose, onCreated }) {
       console.error("❌ Error en handleSubmit:", err);
       toast.error(err.message || "❌ Error de red");
     }
+  }
+
+  // 📋 Copiar contraseña al portapapeles
+  function copyPassword() {
+    if (!generatedPassword) {
+      toast.error("⚠️ No hay contraseña generada");
+      return;
+    }
+    navigator.clipboard.writeText(generatedPassword);
+    toast.success("📋 Contraseña copiada al portapapeles");
   }
 
   return (
@@ -161,6 +178,9 @@ export default function AddOwnerModal({ open, onClose, onCreated }) {
               onClick={() => generatePassword(14)}
             >
               Generar
+            </Button>
+            <Button type="button" variant="outline" onClick={copyPassword}>
+              Copiar
             </Button>
           </div>
           {passwordError && (
