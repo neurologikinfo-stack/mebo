@@ -28,12 +28,14 @@ export async function POST(req) {
     );
   }
 
-  const { data } = evt;
+  const { data, type } = evt;
   const supabase = supabaseServer();
 
   try {
     const email = data.email_addresses?.[0]?.email_address || null;
-    const fullName = data.first_name || "";
+    const fullName = [data.first_name, data.last_name]
+      .filter(Boolean)
+      .join(" ");
     const clerkId = data.id;
 
     // 🔹 Nueva lógica de roles
@@ -50,7 +52,7 @@ export async function POST(req) {
       role = "customer";
     }
 
-    console.log("👤 Webhook user.created:", { email, role, clerkId });
+    console.log(`👤 Webhook ${type}:`, { email, role, clerkId });
 
     // ==============================
     // Insertar/actualizar en profiles
@@ -66,18 +68,24 @@ export async function POST(req) {
     );
 
     // ==============================
-    // Si es Owner, insertar en owners
+    // Si es Owner, actualizar estado en owners
     // ==============================
     if (role === "owner") {
-      await supabase.from("owners").upsert(
-        {
+      const { error } = await supabase
+        .from("owners")
+        .update({
           clerk_id: clerkId,
-          email,
           full_name: fullName,
-        },
-        { onConflict: "clerk_id" }
-      );
-      console.log("🏠 Usuario sincronizado en owners:", email);
+          status: "active", // 👈 ahora ya está activo
+        })
+        .eq("email", email) // 👈 busca por email
+        .is("clerk_id", null); // 👈 solo si estaba vacío (pendiente)
+
+      if (error) {
+        console.error("❌ Error actualizando owner en Supabase:", error);
+      } else {
+        console.log("🏠 Owner activado en Supabase:", email);
+      }
     }
 
     return NextResponse.json({ ok: true });

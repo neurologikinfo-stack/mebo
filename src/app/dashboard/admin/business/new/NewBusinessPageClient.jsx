@@ -82,7 +82,7 @@ export default function NewBusinessPageClient() {
             variant="outline"
             onClick={() => setModalOpen(true)}
           >
-            + Crear nuevo Owner
+            + Invitar nuevo Owner
           </Button>
         </div>
 
