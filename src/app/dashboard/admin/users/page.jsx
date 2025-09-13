@@ -66,7 +66,7 @@ export default function UsersPage() {
                 key={u.clerk_id}
                 className="hover:bg-muted/50 transition cursor-pointer"
                 onClick={() => {
-                  console.log("➡️ Clerk ID:", u.clerk_id); // 👈 solo consola
+                  console.log("➡️ Clerk ID:", u.clerk_id);
                   router.push(`/dashboard/admin/users/${u.clerk_id}`);
                 }}
               >
@@ -90,13 +90,16 @@ export default function UsersPage() {
                     {u.role}
                   </span>
                 </td>
-                <td className="px-6 py-4">
+
+                {/* ✅ Celda de acción aislada del click de la fila */}
+                <td
+                  className="px-6 py-4"
+                  onClick={(e) => e.stopPropagation()} // bloquea propagación
+                >
                   <select
                     value={u.role}
-                    onChange={(e) => {
-                      e.stopPropagation(); // 👈 evita que al cambiar rol navegue
-                      updateRole(u.clerk_id, e.target.value);
-                    }}
+                    onClick={(e) => e.stopPropagation()} // asegura que no dispare navegación
+                    onChange={(e) => updateRole(u.clerk_id, e.target.value)}
                     className="rounded-lg border border-input bg-background px-2 py-1 text-sm shadow-sm focus:border-ring focus:ring-2 focus:ring-ring"
                   >
                     <option value="owner">Owner</option>
