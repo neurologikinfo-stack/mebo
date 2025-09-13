@@ -13,6 +13,7 @@ export default function EditOwnerPage() {
     email: "",
     status: "pending",
     avatar_url: "",
+    phone: "",
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -33,6 +34,7 @@ export default function EditOwnerPage() {
           email: result.data.email || "",
           status: result.data.status || "pending",
           avatar_url: result.data.avatar_url || "",
+          phone: result.data.phone || "",
         });
       } catch (err) {
         console.error("❌ Error cargando owner:", err);
@@ -108,6 +110,17 @@ export default function EditOwnerPage() {
             value={form.email}
             onChange={(e) => setForm({ ...form, email: e.target.value })}
             required
+            className="mt-1 w-full px-3 py-2 border rounded text-black"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium">Teléfono</label>
+          <input
+            type="text"
+            value={form.phone}
+            onChange={(e) => setForm({ ...form, phone: e.target.value })}
+            placeholder="+1 506 555 1234"
             className="mt-1 w-full px-3 py-2 border rounded text-black"
           />
         </div>

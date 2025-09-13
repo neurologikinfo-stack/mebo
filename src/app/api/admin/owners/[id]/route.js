@@ -18,7 +18,7 @@ export async function GET(req, { params }) {
     const supabase = supabaseServer();
     const { data, error } = await supabase
       .from("owners")
-      .select("id, full_name, email, status, created_at")
+      .select("id, full_name, email, status, avatar_url, phone, created_at")
       .eq("id", id)
       .maybeSingle();
 
@@ -60,7 +60,7 @@ export async function PATCH(req, { params }) {
 
     const { id } = params;
     const body = await req.json();
-    const { full_name, email } = body;
+    const { full_name, email, status, avatar_url, phone } = body;
 
     if (!id) {
       return NextResponse.json(
@@ -72,7 +72,13 @@ export async function PATCH(req, { params }) {
     const supabase = supabaseServer();
     const { data, error } = await supabase
       .from("owners")
-      .update({ full_name, email })
+      .update({
+        full_name,
+        email,
+        status,
+        avatar_url,
+        phone,
+      })
       .eq("id", id)
       .select()
       .single();
