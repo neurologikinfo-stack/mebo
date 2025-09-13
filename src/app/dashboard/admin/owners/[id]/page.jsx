@@ -17,20 +17,8 @@ export default function OwnerDetailPage() {
       setLoading(true);
       try {
         const res = await fetch(`/api/admin/owners/${id}`);
-        const rawText = await res.text();
-        console.log("📡 Respuesta cruda:", rawText);
-
-        if (!rawText) throw new Error(`Respuesta vacía (${res.status})`);
-
-        let result;
-        try {
-          result = JSON.parse(rawText);
-        } catch {
-          throw new Error(`Respuesta no es JSON válido (${res.status})`);
-        }
-
-        if (!res.ok || !result.ok)
-          throw new Error(result.error || "Error desconocido");
+        const result = await res.json();
+        if (!res.ok || !result.ok) throw new Error(result.error);
         setOwner(result.data);
       } catch (err) {
         console.error("❌ Error cargando owner:", err);
@@ -56,14 +44,21 @@ export default function OwnerDetailPage() {
         </Link>
       </div>
 
-      {/* Limpio, sin fondo blanco fijo */}
-      <div className="rounded-lg border text-card-foreground shadow-sm p-6 space-y-3">
-        <p>
-          <strong>Nombre:</strong> {owner.full_name || "—"}
-        </p>
-        <p>
-          <strong>Email:</strong> {owner.email || "—"}
-        </p>
+      <div className="rounded-lg border text-card-foreground shadow-sm p-6 space-y-4">
+        <div className="flex items-center gap-4">
+          <img
+            src={owner.avatar_url || "/default-avatar.png"}
+            alt={owner.full_name}
+            className="w-16 h-16 rounded-full object-cover border"
+          />
+          <div>
+            <p className="text-xl font-semibold">{owner.full_name || "—"}</p>
+            <p className="text-sm text-muted-foreground">
+              {owner.email || "—"}
+            </p>
+          </div>
+        </div>
+
         <p>
           <strong>Status:</strong>{" "}
           <span

@@ -16,7 +16,7 @@ export default function OwnerProfilePage() {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
 
-  // cargar perfil
+  // ✅ cargar perfil
   useEffect(() => {
     if (!user) return;
 
@@ -26,7 +26,7 @@ export default function OwnerProfilePage() {
       const { data, error } = await supabase
         .from("profiles")
         .select("full_name, email, phone, avatar_url")
-        .eq("clerk_id", `${user.id}`)
+        .eq("clerk_id", user.id)
         .maybeSingle();
 
       if (!error && data) {
@@ -49,7 +49,7 @@ export default function OwnerProfilePage() {
     })();
   }, [user]);
 
-  // guardar cambios
+  // ✅ guardar cambios
   async function handleSave(e) {
     e.preventDefault();
     if (!user) return;
@@ -64,7 +64,7 @@ export default function OwnerProfilePage() {
         phone: profile.phone,
         avatar_url: profile.avatar_url,
       },
-      { onConflict: "clerk_id" }
+      { onConflict: ["clerk_id"] }
     );
 
     setSaving(false);
@@ -72,10 +72,45 @@ export default function OwnerProfilePage() {
     if (error) {
       setMessage("❌ Error al guardar: " + error.message);
     } else {
-      setMessage("✅ Perfil de propietario actualizado");
+      setMessage("✅ Perfil actualizado correctamente");
     }
 
     setTimeout(() => setMessage(""), 4000);
+  }
+
+  // ✅ subir avatar a Supabase Storage
+  async function handleAvatarUpload(e) {
+    const file = e.target.files[0];
+    if (!file || !user) return;
+
+    const fileExt = file.name.split(".").pop();
+    const filePath = `${user.id}/avatar.${fileExt}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from("avatars")
+      .upload(filePath, file, { cacheControl: "3600", upsert: true });
+
+    if (uploadError) {
+      setMessage("❌ Error al subir avatar: " + uploadError.message);
+      return;
+    }
+
+    const {
+      data: { publicUrl },
+    } = supabase.storage.from("avatars").getPublicUrl(filePath);
+
+    // actualizar BD
+    const { error } = await supabase
+      .from("profiles")
+      .update({ avatar_url: publicUrl })
+      .eq("clerk_id", user.id);
+
+    if (error) {
+      setMessage("❌ Error al guardar avatar en BD");
+    } else {
+      setProfile((prev) => ({ ...prev, avatar_url: publicUrl }));
+      setMessage("✅ Avatar actualizado");
+    }
   }
 
   return (
@@ -110,6 +145,7 @@ export default function OwnerProfilePage() {
               <input
                 type="file"
                 accept="image/*"
+                onChange={handleAvatarUpload}
                 className="mt-1 block text-sm"
               />
             </div>

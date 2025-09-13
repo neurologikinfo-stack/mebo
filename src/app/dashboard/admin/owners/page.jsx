@@ -36,15 +36,20 @@ export default function OwnersPage() {
             <li
               key={owner.id}
               className="p-3 flex justify-between items-center cursor-pointer hover:bg-muted/50 transition"
-              onClick={() => {
-                console.log("➡️ Owner ID:", owner.id); // 👈 solo consola
-                router.push(`/dashboard/admin/owners/${owner.id}`);
-              }}
+              onClick={() => router.push(`/dashboard/admin/owners/${owner.id}`)}
             >
-              <div>
-                <p className="font-medium">{owner.full_name}</p>
-                <p className="text-sm text-muted-foreground">{owner.email}</p>
+              <div className="flex items-center gap-3">
+                <img
+                  src={owner.avatar_url || "/default-avatar.png"}
+                  alt={owner.full_name}
+                  className="w-10 h-10 rounded-full object-cover border"
+                />
+                <div>
+                  <p className="font-medium">{owner.full_name}</p>
+                  <p className="text-sm text-muted-foreground">{owner.email}</p>
+                </div>
               </div>
+
               <span
                 className={`text-sm px-2 py-1 rounded ${
                   owner.status === "pending"
