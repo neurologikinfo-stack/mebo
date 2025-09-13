@@ -1,125 +1,51 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useUser } from "@clerk/nextjs";
-import { supabase } from "@/utils/supabase/client";
+import useProfile from "@/hooks/useProfile";
+import { useState, useEffect } from "react";
 
 export default function OwnerProfilePage() {
-  const { user } = useUser();
-  const [profile, setProfile] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+  const { profile, loading, error, saving, saveProfile, uploadAvatar } =
+    useProfile();
+  const [localProfile, setLocalProfile] = useState(null);
   const [message, setMessage] = useState("");
 
-  // ✅ cargar perfil desde la tabla profiles
+  // ✅ sincronizar el perfil cargado desde el hook a localProfile
   useEffect(() => {
-    if (!user) return;
+    if (profile) setLocalProfile(profile);
+  }, [profile]);
 
-    (async () => {
-      setLoading(true);
-
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("full_name, email, phone, avatar_url")
-        .eq("clerk_id", user.id)
-        .maybeSingle();
-
-      if (error) {
-        console.error("❌ Error al cargar perfil:", error.message);
-        setProfile({
-          full_name: user.fullName || "",
-          email: user.primaryEmailAddress?.emailAddress || "",
-          phone: "",
-          avatar_url: "",
-        });
-      } else if (data) {
-        setProfile({
-          full_name: data.full_name || "",
-          email: data.email || user.primaryEmailAddress?.emailAddress || "",
-          phone: data.phone || "",
-          avatar_url: data.avatar_url || "",
-        });
-      } else {
-        // si no hay fila en profiles, inicializamos con datos de Clerk
-        setProfile({
-          full_name: user.fullName || "",
-          email: user.primaryEmailAddress?.emailAddress || "",
-          phone: "",
-          avatar_url: "",
-        });
-      }
-
-      setLoading(false);
-    })();
-  }, [user]);
-
-  // ✅ función genérica para guardar perfil
-  async function saveProfile(updates) {
-    if (!user) return;
-
-    const { error } = await supabase.from("profiles").upsert(
-      {
-        clerk_id: user.id,
-        ...updates,
-      },
-      { onConflict: ["clerk_id"] }
-    );
-
-    if (error) throw new Error(error.message);
-
-    setProfile((prev) => ({ ...prev, ...updates }));
-  }
-
-  // ✅ guardar cambios del formulario
   async function handleSave(e) {
     e.preventDefault();
-    if (!user) return;
+    if (!localProfile) return;
 
-    setSaving(true);
     try {
-      await saveProfile(profile);
+      await saveProfile(localProfile);
       setMessage("✅ Perfil actualizado correctamente");
     } catch (err) {
-      console.error("❌ Error guardando:", err.message);
       setMessage("❌ Error al guardar: " + err.message);
     } finally {
-      setSaving(false);
       setTimeout(() => setMessage(""), 4000);
     }
   }
 
-  // ✅ subir avatar
   async function handleAvatarUpload(e) {
     const file = e.target.files[0];
-    if (!file || !user) return;
+    if (!file) return;
 
-    const fileExt = file.name.split(".").pop();
-    const filePath = `${user.id}/avatar.${fileExt}`;
-
-    const { error: uploadError } = await supabase.storage
-      .from("avatars")
-      .upload(filePath, file, { upsert: true });
-
-    if (uploadError) {
-      setMessage("❌ Error al subir avatar: " + uploadError.message);
-      return;
-    }
-
-    const {
-      data: { publicUrl },
-    } = supabase.storage.from("avatars").getPublicUrl(filePath);
-
-    try {
-      await saveProfile({ avatar_url: publicUrl });
+    const res = await uploadAvatar(file);
+    if (res.ok) {
+      setLocalProfile((prev) => ({ ...prev, avatar_url: res.avatar_url }));
       setMessage("✅ Avatar actualizado");
-    } catch (err) {
-      setMessage("❌ Error al guardar avatar en BD");
+    } else {
+      setMessage("❌ Error al subir avatar: " + res.error);
     }
+    setTimeout(() => setMessage(""), 4000);
   }
 
-  if (loading) {
+  if (loading)
     return <p className="text-muted-foreground">⏳ Cargando perfil...</p>;
-  }
+  if (error) return <p className="text-red-600">❌ {error}</p>;
+  if (!localProfile) return null;
 
   return (
     <div className="space-y-8 max-w-lg mx-auto">
@@ -139,7 +65,7 @@ export default function OwnerProfilePage() {
         {/* Avatar */}
         <div className="flex items-center gap-4">
           <img
-            src={profile.avatar_url || "/default-avatar.png"}
+            src={localProfile.avatar_url || "/default-avatar.png"}
             alt="Avatar"
             className="w-20 h-20 rounded-full border object-cover"
           />
@@ -163,9 +89,9 @@ export default function OwnerProfilePage() {
           </label>
           <input
             type="text"
-            value={profile.full_name}
+            value={localProfile.full_name}
             onChange={(e) =>
-              setProfile({ ...profile, full_name: e.target.value })
+              setLocalProfile({ ...localProfile, full_name: e.target.value })
             }
             className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 shadow-sm focus:ring-2 focus:ring-blue-500"
           />
@@ -178,7 +104,7 @@ export default function OwnerProfilePage() {
           </label>
           <input
             type="email"
-            value={profile.email}
+            value={localProfile.email}
             disabled
             className="mt-1 block w-full rounded-lg border border-gray-200 bg-gray-100 px-3 py-2 shadow-sm"
           />
@@ -191,8 +117,10 @@ export default function OwnerProfilePage() {
           </label>
           <input
             type="text"
-            value={profile.phone}
-            onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
+            value={localProfile.phone || ""}
+            onChange={(e) =>
+              setLocalProfile({ ...localProfile, phone: e.target.value })
+            }
             placeholder="+1 506 555 1234"
             className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 shadow-sm focus:ring-2 focus:ring-blue-500"
           />
