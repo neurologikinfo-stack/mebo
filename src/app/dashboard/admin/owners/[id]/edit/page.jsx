@@ -2,6 +2,7 @@
 
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
 export default function EditOwnerPage() {
   const { id } = useParams();
@@ -10,7 +11,6 @@ export default function EditOwnerPage() {
   const [form, setForm] = useState({ full_name: "", email: "", status: "" });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState("");
 
   // Cargar datos iniciales
   useEffect(() => {
@@ -30,7 +30,7 @@ export default function EditOwnerPage() {
         });
       } catch (err) {
         console.error("❌ Error cargando owner:", err);
-        setError(err.message);
+        toast.error(err.message || "Error cargando owner");
       } finally {
         setLoading(false);
       }
@@ -40,7 +40,6 @@ export default function EditOwnerPage() {
   async function handleSubmit(e) {
     e.preventDefault();
     setSaving(true);
-    setError("");
 
     try {
       const res = await fetch(`/api/admin/owners/${id}`, {
@@ -52,10 +51,11 @@ export default function EditOwnerPage() {
       const result = await res.json();
       if (!res.ok || !result.ok) throw new Error(result.error);
 
+      toast.success("✅ Cambios guardados correctamente");
       router.push(`/dashboard/admin/owners/${id}`);
     } catch (err) {
       console.error("❌ Error guardando cambios:", err);
-      setError(err.message);
+      toast.error(err.message || "Error guardando cambios");
     } finally {
       setSaving(false);
     }
@@ -69,15 +69,15 @@ export default function EditOwnerPage() {
       const result = await res.json();
       if (!res.ok || !result.ok) throw new Error(result.error);
 
+      toast.success("🗑️ Owner eliminado correctamente");
       router.push("/dashboard/admin/owners");
     } catch (err) {
       console.error("❌ Error eliminando owner:", err);
-      setError(err.message);
+      toast.error(err.message || "Error eliminando owner");
     }
   }
 
   if (loading) return <p className="p-6">⏳ Cargando...</p>;
-  if (error) return <p className="p-6 text-red-500">❌ {error}</p>;
 
   return (
     <div className="p-6 space-y-6 max-w-lg">
@@ -117,8 +117,6 @@ export default function EditOwnerPage() {
             <option value="confirmed">Confirmed</option>
           </select>
         </div>
-
-        {error && <p className="text-red-500">{error}</p>}
 
         <div className="flex gap-2">
           <button

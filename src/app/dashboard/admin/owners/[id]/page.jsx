@@ -3,12 +3,12 @@
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { toast } from "sonner";
 
 export default function OwnerDetailPage() {
   const { id } = useParams();
   const [owner, setOwner] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
 
   useEffect(() => {
     if (!id) return;
@@ -17,12 +17,24 @@ export default function OwnerDetailPage() {
       setLoading(true);
       try {
         const res = await fetch(`/api/admin/owners/${id}`);
-        const result = await res.json();
-        if (!res.ok || !result.ok) throw new Error(result.error);
+        const rawText = await res.text();
+        console.log("📡 Respuesta cruda:", rawText);
+
+        if (!rawText) throw new Error(`Respuesta vacía (${res.status})`);
+
+        let result;
+        try {
+          result = JSON.parse(rawText);
+        } catch {
+          throw new Error(`Respuesta no es JSON válido (${res.status})`);
+        }
+
+        if (!res.ok || !result.ok)
+          throw new Error(result.error || "Error desconocido");
         setOwner(result.data);
       } catch (err) {
         console.error("❌ Error cargando owner:", err);
-        setError(err.message);
+        toast.error(err.message || "Error cargando owner");
       } finally {
         setLoading(false);
       }
@@ -30,7 +42,6 @@ export default function OwnerDetailPage() {
   }, [id]);
 
   if (loading) return <p className="p-6">⏳ Cargando owner...</p>;
-  if (error) return <p className="p-6 text-red-500">❌ {error}</p>;
   if (!owner) return <p className="p-6">Owner no encontrado</p>;
 
   return (
@@ -45,7 +56,8 @@ export default function OwnerDetailPage() {
         </Link>
       </div>
 
-      <div className="rounded-lg border bg-card text-card-foreground shadow-sm p-6 space-y-3">
+      {/* Limpio, sin fondo blanco fijo */}
+      <div className="rounded-lg border text-card-foreground shadow-sm p-6 space-y-3">
         <p>
           <strong>Nombre:</strong> {owner.full_name || "—"}
         </p>
