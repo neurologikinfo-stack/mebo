@@ -13,10 +13,20 @@ export default async function AdminHomePage() {
     .from("businesses")
     .select("*", { count: "exact", head: true });
 
-  // ✅ Últimos 5 usuarios
+  // ✅ Últimos 5 usuarios con permisos
   const { data: latestUsers } = await supabase
     .from("profiles")
-    .select("clerk_id, full_name, email, created_at")
+    .select(
+      `
+      clerk_id,
+      full_name,
+      email,
+      created_at,
+      user_permissions (
+        permissions (name)
+      )
+    `
+    )
     .order("created_at", { ascending: false })
     .limit(5);
 
@@ -56,7 +66,15 @@ export default async function AdminHomePage() {
                 href={`/dashboard/admin/users/${u.clerk_id}`}
                 className="w-full flex justify-between"
               >
-                <span>{u.full_name || "Sin nombre"}</span>
+                <span>
+                  {u.full_name || "Sin nombre"}
+                  <br />
+                  <span className="text-xs text-muted-foreground">
+                    {(u.user_permissions || [])
+                      .map((up) => up.permissions?.name)
+                      .join(", ") || "Sin permisos"}
+                  </span>
+                </span>
                 <span className="text-sm text-muted-foreground">{u.email}</span>
               </Link>
             </li>

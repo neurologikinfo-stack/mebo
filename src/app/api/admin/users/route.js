@@ -5,7 +5,7 @@ import { createClient } from "@supabase/supabase-js";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
+  process.env.SUPABASE_SERVICE_ROLE_KEY // ✅ Service role (bypassa RLS)
 );
 
 export async function GET(req) {
@@ -13,13 +13,11 @@ export async function GET(req) {
     const { searchParams } = new URL(req.url);
     const clerkId = searchParams.get("clerk_id");
 
-    // 🔹 Si se pasa clerk_id -> buscar usuario específico
     if (clerkId) {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("id, clerk_id, email, full_name, role, created_at, updated_at")
-        .eq("clerk_id", clerkId) // ✅ solo buscamos con prefijo "user_"
-        .maybeSingle();
+      // 🔹 Usamos la función segura para traer un perfil
+      const { data, error } = await supabase.rpc("admin_get_profile", {
+        clerk_id_input: clerkId,
+      });
 
       if (error) throw error;
       if (!data) {
@@ -32,11 +30,8 @@ export async function GET(req) {
       return NextResponse.json({ ok: true, data });
     }
 
-    // 🔹 Si no se pasa clerk_id -> listar todos
-    const { data, error } = await supabase
-      .from("profiles")
-      .select("id, clerk_id, email, full_name, role, created_at, updated_at")
-      .order("created_at", { ascending: false });
+    // 🔹 Usamos la función segura para traer todos
+    const { data, error } = await supabase.rpc("admin_list_profiles");
 
     if (error) throw error;
 
@@ -44,7 +39,7 @@ export async function GET(req) {
   } catch (err) {
     console.error("❌ Error en /api/admin/users:", err);
     return NextResponse.json(
-      { ok: false, error: err.message },
+      { ok: false, error: err.message || "Error interno" },
       { status: 500 }
     );
   }

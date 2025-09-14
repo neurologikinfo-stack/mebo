@@ -12,6 +12,7 @@ import {
   BarChart3,
   User,
   Settings,
+  Shield,
   UserCog, // 👈 agregado
 } from "lucide-react";
 
@@ -19,7 +20,8 @@ const menuItems = [
   { name: "Dashboard", href: "/dashboard/admin", icon: LayoutDashboard },
   { name: "Usuarios", href: "/dashboard/admin/users", icon: Users },
   { name: "Negocios", href: "/dashboard/admin/business", icon: Briefcase },
-  { name: "Owners", href: "/dashboard/admin/owners", icon: UserCog }, // 👈 nuevo ítem
+  { name: "Owners", href: "/dashboard/admin/owners", icon: UserCog },
+  { name: "Permisos", href: "/dashboard/admin/permissions", icon: Shield }, // 👈 nuevo
   { name: "Reportes", href: "/dashboard/admin/reports", icon: BarChart3 },
   { name: "Perfil", href: "/dashboard/admin/profile", icon: User },
   { name: "Configuración", href: "/dashboard/admin/settings", icon: Settings },
