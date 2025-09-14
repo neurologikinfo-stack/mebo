@@ -1,12 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
 export default function PermissionsPage() {
   const [users, setUsers] = useState([]);
   const [permissions, setPermissions] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   // 🔹 Cargar usuarios con permisos
   useEffect(() => {
@@ -16,7 +17,7 @@ export default function PermissionsPage() {
       if (res.ok && result.ok) {
         setUsers(result.data);
       } else {
-        console.error("❌ Error cargando usuarios:", result.error);
+        toast.error(result.error || "Error cargando usuarios");
       }
     })();
   }, []);
@@ -29,49 +30,66 @@ export default function PermissionsPage() {
       if (res.ok && result.ok) {
         setPermissions(result.data);
       } else {
-        console.error("❌ Error cargando permisos:", result.error);
+        toast.error(result.error || "Error cargando permisos");
       }
     })();
   }, []);
 
-  async function togglePermission(permission, checked) {
+  // 🔹 Agrupar permisos por recurso
+  const groupedByResource = permissions.reduce((acc, perm) => {
+    const [resource, action] = perm.name.split(".");
+    if (!acc[resource]) acc[resource] = {};
+    acc[resource][action] = perm;
+    return acc;
+  }, {});
+
+  // 🔹 Toggle local (marcar/desmarcar sin guardar aún)
+  function toggleLocalPermission(permission, checked) {
+    setSelectedUser((prev) =>
+      prev
+        ? {
+            ...prev,
+            permissions: checked
+              ? [...prev.permissions, permission]
+              : prev.permissions.filter((p) => p !== permission),
+          }
+        : prev
+    );
+  }
+
+  // 🔹 Guardar en bloque
+  async function savePermissions() {
     if (!selectedUser) return;
-    setLoading(true);
+    setSaving(true);
 
     try {
-      const res = await fetch("/api/admin/user-permissions", {
-        method: "POST",
+      const res = await fetch(`/api/admin/users/${selectedUser.clerk_id}`, {
+        method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          clerk_id: selectedUser.clerk_id,
-          permission,
-          grant: checked,
+          permissions: selectedUser.permissions,
         }),
       });
 
       const result = await res.json();
-      if (!res.ok || !result.success) {
-        throw new Error(result.error || "Error actualizando permiso");
+      if (!res.ok || !result.ok) {
+        throw new Error(result.error || "Error al guardar permisos");
       }
 
-      // 🔹 actualizar localmente
+      toast.success("✅ Permisos actualizados correctamente");
+
+      // Actualizamos lista global
       setUsers((prev) =>
         prev.map((u) =>
           u.clerk_id === selectedUser.clerk_id
-            ? {
-                ...u,
-                permissions: checked
-                  ? [...u.permissions, permission]
-                  : u.permissions.filter((p) => p !== permission),
-              }
+            ? { ...u, permissions: [...selectedUser.permissions] }
             : u
         )
       );
     } catch (err) {
-      console.error("❌ Error al asignar permiso:", err.message);
-      alert(err.message);
+      toast.error("❌ " + err.message);
     } finally {
-      setLoading(false);
+      setSaving(false);
     }
   }
 
@@ -79,7 +97,7 @@ export default function PermissionsPage() {
     <div className="p-6 space-y-6">
       <h1 className="text-2xl font-bold">Gestión de permisos</h1>
 
-      {/* 🔹 Selector de usuario */}
+      {/* Selector de usuario */}
       <div>
         <label className="block text-sm font-medium">Seleccionar usuario</label>
         <select
@@ -99,34 +117,64 @@ export default function PermissionsPage() {
         </select>
       </div>
 
-      {/* 🔹 Tabla de permisos */}
+      {/* Tabla estilo Buildium con CRUD */}
       {selectedUser && (
-        <div className="overflow-x-auto">
-          <table className="min-w-full border text-sm">
+        <div className="overflow-x-auto border rounded-lg">
+          <table className="min-w-full text-sm">
             <thead className="bg-muted">
               <tr>
-                <th className="px-4 py-2 text-left">Permiso</th>
-                <th className="px-4 py-2 text-center">Asignado</th>
+                <th className="px-4 py-2 text-left">Recurso</th>
+                <th className="px-4 py-2 text-center">Create</th>
+                <th className="px-4 py-2 text-center">View</th>
+                <th className="px-4 py-2 text-center">Edit</th>
+                <th className="px-4 py-2 text-center">Delete</th>
               </tr>
             </thead>
             <tbody>
-              {permissions.map((perm) => (
-                <tr key={perm.id}>
-                  <td className="px-4 py-2">{perm.name}</td>
-                  <td className="px-4 py-2 text-center">
-                    <input
-                      type="checkbox"
-                      checked={selectedUser.permissions.includes(perm.name)}
-                      onChange={(e) =>
-                        togglePermission(perm.name, e.target.checked)
-                      }
-                      disabled={loading}
-                    />
+              {Object.entries(groupedByResource).map(([resource, actions]) => (
+                <tr key={resource} className="border-t">
+                  <td className="px-4 py-2 font-medium capitalize">
+                    {resource}
                   </td>
+                  {["create", "view", "edit", "delete"].map((action) => (
+                    <td key={action} className="px-4 py-2 text-center">
+                      {actions[action] ? (
+                        <input
+                          type="checkbox"
+                          className="h-4 w-4 cursor-pointer"
+                          checked={selectedUser.permissions.includes(
+                            actions[action].name
+                          )}
+                          onChange={(e) =>
+                            toggleLocalPermission(
+                              actions[action].name,
+                              e.target.checked
+                            )
+                          }
+                          disabled={saving}
+                        />
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
+                      )}
+                    </td>
+                  ))}
                 </tr>
               ))}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {/* Botón guardar */}
+      {selectedUser && (
+        <div className="mt-4">
+          <button
+            onClick={savePermissions}
+            disabled={saving}
+            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
+          >
+            {saving ? "Guardando..." : "Guardar cambios"}
+          </button>
         </div>
       )}
     </div>
