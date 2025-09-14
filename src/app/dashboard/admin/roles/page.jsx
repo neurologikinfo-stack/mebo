@@ -3,15 +3,20 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"; // shadcn/ui
 
 export default function RolesPage() {
   const [roles, setRoles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState(null);
   const [seeding, setSeeding] = useState(false);
-
-  const [previewData, setPreviewData] = useState(null);
-  const [showPreview, setShowPreview] = useState(false);
+  const [preview, setPreview] = useState(null);
+  const [openPreview, setOpenPreview] = useState(false);
 
   // 🔹 Cargar roles
   useEffect(() => {
@@ -63,11 +68,12 @@ export default function RolesPage() {
   async function handlePreviewSeed() {
     try {
       setSeeding(true);
-      const res = await fetch("/api/admin/roles/seed/preview"); // ✅ GET
+      const res = await fetch("/api/admin/roles/seed/preview");
       const result = await res.json();
       if (!res.ok || !result.ok) throw new Error(result.error);
-      setPreviewData(result.data);
-      setShowPreview(true);
+
+      setPreview(result.data);
+      setOpenPreview(true);
     } catch (err) {
       toast.error("❌ " + err.message);
     } finally {
@@ -81,7 +87,9 @@ export default function RolesPage() {
       const res = await fetch("/api/admin/roles/seed", { method: "POST" });
       const result = await res.json();
       if (!res.ok || !result.ok) throw new Error(result.error);
+
       toast.success("✅ Roles y permisos insertados");
+
       // recargar lista
       const reload = await fetch("/api/admin/roles");
       const data = await reload.json();
@@ -93,12 +101,12 @@ export default function RolesPage() {
     }
   }
 
-  // 🔹 Agrupar permisos por categoría (users.view → users)
-  function groupByCategory(permissions) {
-    return permissions.reduce((acc, perm) => {
-      const [category] = perm.split(".");
-      if (!acc[category]) acc[category] = [];
-      acc[category].push(perm);
+  // 🔹 Agrupar permisos por recurso/acción
+  function groupByResource(perms) {
+    return perms.reduce((acc, perm) => {
+      const [resource, action] = perm.split(".");
+      if (!acc[resource]) acc[resource] = {};
+      acc[resource][action] = true;
       return acc;
     }, {});
   }
@@ -107,7 +115,7 @@ export default function RolesPage() {
 
   return (
     <div className="p-6 space-y-6">
-      {/* Header con botón crear y acciones de seed */}
+      {/* Header con botón crear y seed */}
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Gestión de Roles</h1>
         <div className="flex gap-2">
@@ -134,7 +142,7 @@ export default function RolesPage() {
         </div>
       </div>
 
-      {/* Tabla de roles actuales */}
+      {/* Tabla de roles */}
       <div className="overflow-x-auto border rounded-lg">
         <table className="min-w-full text-sm">
           <thead className="bg-muted">
@@ -191,62 +199,59 @@ export default function RolesPage() {
         </table>
       </div>
 
-      {/* Modal vista previa */}
-      {showPreview && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50">
-          <div className="bg-white rounded-lg shadow-lg w-3/4 max-w-4xl p-6">
-            <h2 className="text-xl font-bold mb-4">Vista previa de Seed</h2>
-            <div className="space-y-6 max-h-[70vh] overflow-y-auto">
-              {previewData?.roles.map((role) => {
-                const grouped = groupByCategory(
-                  previewData.assignments[role] || []
-                );
+      {/* Modal preview con tabla de permisos */}
+      <Dialog open={openPreview} onOpenChange={setOpenPreview}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Vista previa de seed</DialogTitle>
+          </DialogHeader>
+
+          {preview ? (
+            <div className="space-y-6">
+              {preview.map((role) => {
+                const grouped = groupByResource(role.permissions);
                 return (
-                  <div key={role} className="border rounded p-4">
-                    <h3 className="font-semibold mb-3">{role}</h3>
-                    {Object.keys(grouped).length > 0 ? (
-                      <div className="space-y-3">
-                        {Object.entries(grouped).map(([category, perms]) => (
-                          <div key={category}>
-                            <h4 className="text-sm font-medium text-gray-700 mb-1">
-                              {category}
-                            </h4>
-                            <ul className="grid grid-cols-2 gap-2 pl-4">
-                              {perms.map((perm) => (
-                                <li
-                                  key={perm}
-                                  className="flex items-center gap-2"
+                  <div key={role.name} className="border rounded-lg p-3">
+                    <h3 className="font-semibold mb-2">{role.name}</h3>
+                    <table className="min-w-full text-sm border">
+                      <thead className="bg-muted">
+                        <tr>
+                          <th className="px-3 py-2 text-left">Recurso</th>
+                          <th className="px-3 py-2 text-center">View</th>
+                          <th className="px-3 py-2 text-center">Edit</th>
+                          <th className="px-3 py-2 text-center">Delete</th>
+                          <th className="px-3 py-2 text-center">Create</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {Object.entries(grouped).map(([resource, actions]) => (
+                          <tr key={resource} className="border-t">
+                            <td className="px-3 py-2 font-medium">
+                              {resource}
+                            </td>
+                            {["view", "edit", "delete", "create"].map(
+                              (action) => (
+                                <td
+                                  key={action}
+                                  className="px-3 py-2 text-center"
                                 >
-                                  <span className="text-green-600 font-bold">
-                                    ✓
-                                  </span>
-                                  <span className="text-sm">{perm}</span>
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
+                                  {actions[action] ? "✔️" : "—"}
+                                </td>
+                              )
+                            )}
+                          </tr>
                         ))}
-                      </div>
-                    ) : (
-                      <span className="text-muted-foreground text-sm">
-                        Sin permisos
-                      </span>
-                    )}
+                      </tbody>
+                    </table>
                   </div>
                 );
               })}
             </div>
-            <div className="flex justify-end gap-2 mt-4">
-              <button
-                onClick={() => setShowPreview(false)}
-                className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400 transition"
-              >
-                Cerrar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+          ) : (
+            <p>⏳ Cargando preview...</p>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
