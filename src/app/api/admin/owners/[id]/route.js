@@ -3,7 +3,7 @@ import { supabaseServer } from "@/utils/supabase/server";
 import { auth } from "@clerk/nextjs/server";
 
 // ==========================
-// GET: obtener un owner por ID
+// GET: obtener un owner por ID (con avatar real desde profiles)
 // ==========================
 export async function GET(req, { params }) {
   try {
@@ -18,7 +18,18 @@ export async function GET(req, { params }) {
     const supabase = supabaseServer();
     const { data, error } = await supabase
       .from("owners")
-      .select("id, full_name, email, status, avatar_url, phone, created_at")
+      .select(
+        `
+        id,
+        clerk_id,
+        full_name,
+        email,
+        status,
+        phone,
+        created_at,
+        profiles ( avatar_url )
+      `
+      )
       .eq("id", id)
       .maybeSingle();
 
@@ -36,7 +47,13 @@ export async function GET(req, { params }) {
       );
     }
 
-    return NextResponse.json({ ok: true, data });
+    // aplanamos para tener avatar_url directo
+    const owner = {
+      ...data,
+      avatar_url: data.profiles?.avatar_url || null,
+    };
+
+    return NextResponse.json({ ok: true, data: owner });
   } catch (err) {
     return NextResponse.json(
       { ok: false, error: err.message || "Error interno" },
@@ -60,7 +77,7 @@ export async function PATCH(req, { params }) {
 
     const { id } = params;
     const body = await req.json();
-    const { full_name, email, status, avatar_url, phone } = body;
+    const { full_name, email, status, phone } = body;
 
     if (!id) {
       return NextResponse.json(
@@ -76,7 +93,6 @@ export async function PATCH(req, { params }) {
         full_name,
         email,
         status,
-        avatar_url,
         phone,
       })
       .eq("id", id)

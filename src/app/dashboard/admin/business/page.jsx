@@ -3,8 +3,6 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { MoreHorizontal } from "lucide-react";
-
-// shadcn/ui
 import {
   Table,
   TableHeader,
@@ -37,7 +35,6 @@ export default function BusinessListPage() {
   async function fetchBusinesses() {
     setLoading(true);
     setErr("");
-
     try {
       const res = await fetch("/api/admin/businesses");
       const result = await res.json();
@@ -47,14 +44,12 @@ export default function BusinessListPage() {
     } catch (e) {
       setErr(e.message);
     }
-
     setLoading(false);
   }
 
   async function handleDelete(id) {
     if (!confirm("¿Seguro que quieres eliminar este negocio?")) return;
     setProcessingId(id);
-
     try {
       const res = await fetch(`/api/admin/businesses/${id}`, {
         method: "DELETE",
@@ -65,13 +60,11 @@ export default function BusinessListPage() {
     } catch (e) {
       alert("Error eliminando negocio: " + e.message);
     }
-
     setProcessingId(null);
   }
 
   async function handleRestore(id) {
     setProcessingId(id);
-
     try {
       const res = await fetch(`/api/admin/businesses/${id}`, {
         method: "PATCH",
@@ -82,7 +75,6 @@ export default function BusinessListPage() {
     } catch (e) {
       alert("Error restaurando negocio: " + e.message);
     }
-
     setProcessingId(null);
   }
 
@@ -123,10 +115,7 @@ export default function BusinessListPage() {
               <TableRow
                 key={b.id}
                 className="hover:bg-muted/50 transition-colors cursor-pointer"
-                onClick={() => {
-                  console.log("➡️ Business ID:", b.id); // 👈 solo consola
-                  router.push(`/dashboard/admin/business/${b.id}`);
-                }}
+                onClick={() => router.push(`/dashboard/admin/business/${b.id}`)}
               >
                 {/* Logo */}
                 <TableCell>
@@ -148,13 +137,15 @@ export default function BusinessListPage() {
                 <TableCell>@{b.slug}</TableCell>
                 <TableCell>{b.email || "—"}</TableCell>
                 <TableCell>{b.phone || "—"}</TableCell>
+
+                {/* Estado con badge */}
                 <TableCell>
                   {b.deleted_at ? (
-                    <span className="text-destructive font-medium">
+                    <span className="px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400">
                       Eliminado
                     </span>
                   ) : (
-                    <span className="text-green-600 dark:text-green-400 font-medium">
+                    <span className="px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-400">
                       Activo
                     </span>
                   )}
@@ -163,7 +154,7 @@ export default function BusinessListPage() {
                 {/* Acciones */}
                 <TableCell
                   className="text-right"
-                  onClick={(e) => e.stopPropagation()} // 👈 evita que menú dispare navegación
+                  onClick={(e) => e.stopPropagation()}
                 >
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>

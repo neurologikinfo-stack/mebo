@@ -2,6 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
 
 export default function UsersPage() {
   const [users, setUsers] = useState([]);
@@ -65,10 +72,9 @@ export default function UsersPage() {
               <tr
                 key={u.clerk_id}
                 className="hover:bg-muted/50 transition cursor-pointer"
-                onClick={() => {
-                  console.log("➡️ Clerk ID:", u.clerk_id);
-                  router.push(`/dashboard/admin/users/${u.clerk_id}`);
-                }}
+                onClick={() =>
+                  router.push(`/dashboard/admin/users/${u.clerk_id}`)
+                }
               >
                 <td className="px-6 py-4">{u.email}</td>
                 <td className="px-6 py-4 text-muted-foreground">
@@ -91,23 +97,30 @@ export default function UsersPage() {
                   </span>
                 </td>
 
-                {/* ✅ Celda de acción aislada del click de la fila */}
+                {/* ✅ DropdownMenu en lugar de <select> */}
                 <td
                   className="px-6 py-4"
-                  onClick={(e) => e.stopPropagation()} // bloquea propagación
+                  onClick={(e) => e.stopPropagation()} // evita navegación desde esta celda
                 >
-                  <select
-                    value={u.role}
-                    onClick={(e) => e.stopPropagation()} // asegura que no dispare navegación
-                    onChange={(e) => updateRole(u.clerk_id, e.target.value)}
-                    className="rounded-lg border border-input bg-background px-2 py-1 text-sm shadow-sm focus:border-ring focus:ring-2 focus:ring-ring"
-                  >
-                    <option value="owner">Owner</option>
-                    <option value="customer">Customer</option>
-                    <option value="staff">Staff</option>
-                    <option value="user">User</option>
-                    <option value="admin">Admin</option>
-                  </select>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" size="sm">
+                        Cambiar rol
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent>
+                      {["owner", "customer", "staff", "user", "admin"].map(
+                        (role) => (
+                          <DropdownMenuItem
+                            key={role}
+                            onClick={() => updateRole(u.clerk_id, role)}
+                          >
+                            {role}
+                          </DropdownMenuItem>
+                        )
+                      )}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </td>
               </tr>
             ))}

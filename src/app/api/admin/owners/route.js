@@ -5,27 +5,48 @@ import { clerkClient } from "@clerk/clerk-sdk-node";
 
 /**
  * GET /api/admin/owners
- * Devuelve todos los owners en Supabase
+ * Devuelve todos los owners y agrega avatar desde profiles.clerk_id
  */
 export async function GET() {
   try {
     const supabase = supabaseServer();
-    const { data, error } = await supabase
+
+    // 1. Traer owners
+    const { data: owners, error } = await supabase
       .from("owners")
-      .select("id, full_name, email, status, created_at")
+      .select("id, clerk_id, full_name, email, status, created_at")
       .order("created_at", { ascending: false });
 
-    if (error) {
-      console.error("❌ Error cargando owners:", error);
-      return NextResponse.json(
-        { ok: false, error: error.message },
-        { status: 500 }
-      );
+    if (error) throw error;
+
+    if (!owners || owners.length === 0) {
+      return NextResponse.json({ ok: true, data: [] });
     }
 
-    return NextResponse.json({ ok: true, data });
+    // 2. Buscar los avatars en profiles
+    const clerkIds = owners.map((o) => o.clerk_id).filter(Boolean);
+
+    const { data: profiles, error: profilesError } = await supabase
+      .from("profiles")
+      .select("clerk_id, avatar_url")
+      .in("clerk_id", clerkIds);
+
+    if (profilesError) throw profilesError;
+
+    // 3. Crear un mapa clerk_id -> avatar_url
+    const profilesMap = Object.fromEntries(
+      (profiles || []).map((p) => [p.clerk_id, p.avatar_url])
+    );
+
+    // 4. Enriquecer owners con avatar_url
+    const enrichedOwners = owners.map((o) => ({
+      ...o,
+      avatar_url: profilesMap[o.clerk_id] || null,
+    }));
+
+    return NextResponse.json({ ok: true, data: enrichedOwners });
   } catch (err) {
-    console.error("❌ Excepción en GET /owners:", err);
+    console.error("❌ Error en GET /owners:", err);
     return NextResponse.json(
       { ok: false, error: err.message },
       { status: 500 }
@@ -35,7 +56,7 @@ export async function GET() {
 
 /**
  * POST /api/admin/owners
- * Crea una invitación en Clerk y la guarda en Supabase
+ * Crea invitación en Clerk y la guarda en Supabase
  */
 export async function POST(req) {
   try {
@@ -48,8 +69,6 @@ export async function POST(req) {
     }
 
     const body = await req.json();
-    console.log("📥 Body recibido en /owners:", JSON.stringify(body, null, 2));
-
     const { full_name, email } = body;
 
     if (!full_name || !email) {
@@ -59,7 +78,6 @@ export async function POST(req) {
       );
     }
 
-    // 🌍 redirect_url con fallback seguro
     const baseUrl =
       process.env.NEXT_PUBLIC_APP_URL?.trim() || "http://localhost:3000";
     const redirectUrl = `${baseUrl}/dashboard/owner`;
@@ -70,16 +88,9 @@ export async function POST(req) {
       invitation = await clerkClient.invitations.createInvitation({
         email_address: email.trim(),
         redirect_url: redirectUrl,
-        public_metadata: {
-          role: "owner",
-        },
+        public_metadata: { role: "owner" },
       });
-      console.log("✅ Invitación creada en Clerk:", invitation.id);
     } catch (clerkErr) {
-      console.error(
-        "❌ Error creando invitación en Clerk:",
-        JSON.stringify(clerkErr, null, 2)
-      );
       const message =
         clerkErr.errors?.map((e) => e.message).join(", ") ||
         clerkErr.message ||
@@ -101,48 +112,35 @@ export async function POST(req) {
       );
     }
 
-    // Guardar en Supabase como pending
-    try {
-      const supabase = supabaseServer();
-      const { data, error } = await supabase
-        .from("owners")
-        .insert([
-          {
-            full_name,
-            email,
-            clerk_invitation_id: invitation.id,
-            status: "pending",
-          },
-        ])
-        .select()
-        .single();
-
-      if (error) {
-        console.error("❌ Error insertando owner en Supabase:", error);
-        return NextResponse.json(
-          { ok: false, error: "Error en Supabase", details: error.message },
-          { status: 400 }
-        );
-      }
-
-      return NextResponse.json({
-        ok: true,
-        data,
-        invitationUrl: invitation.url, // 👈 devolvemos el link de invitación
-      });
-    } catch (dbErr) {
-      console.error("❌ Excepción al insertar en Supabase:", dbErr);
-      return NextResponse.json(
+    // Guardar en Supabase
+    const supabase = supabaseServer();
+    const { data, error } = await supabase
+      .from("owners")
+      .insert([
         {
-          ok: false,
-          error: "Error inesperado en Supabase",
-          details: dbErr.message,
+          full_name,
+          email,
+          clerk_id: null, // 🔹 se llenará cuando acepte la invitación
+          clerk_invitation_id: invitation.id,
+          status: "pending",
         },
-        { status: 500 }
+      ])
+      .select()
+      .single();
+
+    if (error) {
+      return NextResponse.json(
+        { ok: false, error: "Error en Supabase", details: error.message },
+        { status: 400 }
       );
     }
+
+    return NextResponse.json({
+      ok: true,
+      data,
+      invitationUrl: invitation.url,
+    });
   } catch (err) {
-    console.error("❌ Error en POST /owners:", err);
     return NextResponse.json(
       { ok: false, error: err.message },
       { status: 500 }
@@ -150,9 +148,6 @@ export async function POST(req) {
   }
 }
 
-/**
- * Otros métodos no soportados
- */
 export async function PUT() {
   return NextResponse.json(
     { ok: false, error: "Method Not Allowed" },
