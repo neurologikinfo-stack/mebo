@@ -17,19 +17,28 @@ export default function UsersPage() {
   useEffect(() => {
     (async () => {
       const res = await fetch("/api/admin/users");
-      const data = await res.json();
-      if (data.success) setUsers(data.users);
+      const result = await res.json();
+
+      if (res.ok && result.ok) {
+        setUsers(result.data); // ✅ ahora usamos "data"
+      } else {
+        console.error("❌ Error cargando usuarios:", result.error);
+      }
     })();
   }, []);
 
   async function updateRole(clerk_id, role) {
-    const res = await fetch("/api/admin/set-role", {
-      method: "POST",
+    const res = await fetch(`/api/admin/users/${clerk_id}`, {
+      method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ clerk_id, role }),
+      body: JSON.stringify({ role }),
     });
-    const data = await res.json();
-    alert(data.message || data.error);
+
+    const result = await res.json();
+    if (!res.ok || !result.ok) {
+      alert(result.error || "Error al actualizar rol");
+      return;
+    }
 
     setUsers((prev) =>
       prev.map((u) => (u.clerk_id === clerk_id ? { ...u, role } : u))

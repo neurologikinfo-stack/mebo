@@ -3,7 +3,7 @@ import { supabaseServer } from "@/utils/supabase/server";
 import { auth } from "@clerk/nextjs/server";
 
 // ==========================
-// GET: obtener un owner por ID (con avatar real desde profiles)
+// GET: obtener un owner por ID (unificado con profiles)
 // ==========================
 export async function GET(req, { params }) {
   try {
@@ -22,12 +22,14 @@ export async function GET(req, { params }) {
         `
         id,
         clerk_id,
-        full_name,
-        email,
         status,
-        phone,
         created_at,
-        profiles ( avatar_url )
+        profiles:profiles!inner (
+          full_name,
+          email,
+          phone,
+          avatar_url
+        )
       `
       )
       .eq("id", id)
@@ -47,10 +49,16 @@ export async function GET(req, { params }) {
       );
     }
 
-    // aplanamos para tener avatar_url directo
+    // 🔹 Flatten para frontend
     const owner = {
-      ...data,
-      avatar_url: data.profiles?.avatar_url || null,
+      id: data.id,
+      clerk_id: data.clerk_id,
+      status: data.status,
+      created_at: data.created_at,
+      full_name: data.profiles?.full_name,
+      email: data.profiles?.email,
+      phone: data.profiles?.phone,
+      avatar_url: data.profiles?.avatar_url,
     };
 
     return NextResponse.json({ ok: true, data: owner });
@@ -63,7 +71,7 @@ export async function GET(req, { params }) {
 }
 
 // ==========================
-// PATCH: actualizar owner
+// PATCH: actualizar owner + profile
 // ==========================
 export async function PATCH(req, { params }) {
   try {
@@ -77,7 +85,7 @@ export async function PATCH(req, { params }) {
 
     const { id } = params;
     const body = await req.json();
-    const { full_name, email, status, phone } = body;
+    const { full_name, status, phone, avatar_url } = body;
 
     if (!id) {
       return NextResponse.json(
@@ -87,26 +95,52 @@ export async function PATCH(req, { params }) {
     }
 
     const supabase = supabaseServer();
-    const { data, error } = await supabase
-      .from("owners")
-      .update({
-        full_name,
-        email,
-        status,
-        phone,
-      })
-      .eq("id", id)
-      .select()
-      .single();
 
-    if (error) {
+    // 1️⃣ Buscar owner para obtener clerk_id
+    const { data: owner, error: ownerError } = await supabase
+      .from("owners")
+      .select("id, clerk_id")
+      .eq("id", id)
+      .maybeSingle();
+
+    if (ownerError || !owner) {
       return NextResponse.json(
-        { ok: false, error: error.message },
+        { ok: false, error: ownerError?.message || "Owner no encontrado" },
+        { status: 404 }
+      );
+    }
+
+    // 2️⃣ Actualizar estado en owners
+    const { error: updateOwnerError } = await supabase
+      .from("owners")
+      .update({ status })
+      .eq("id", id);
+
+    if (updateOwnerError) {
+      return NextResponse.json(
+        { ok: false, error: updateOwnerError.message },
         { status: 400 }
       );
     }
 
-    return NextResponse.json({ ok: true, data });
+    // 3️⃣ Actualizar perfil en profiles
+    const { error: updateProfileError } = await supabase
+      .from("profiles")
+      .update({
+        full_name,
+        phone,
+        avatar_url,
+      })
+      .eq("clerk_id", owner.clerk_id);
+
+    if (updateProfileError) {
+      return NextResponse.json(
+        { ok: false, error: updateProfileError.message },
+        { status: 400 }
+      );
+    }
+
+    return NextResponse.json({ ok: true });
   } catch (err) {
     return NextResponse.json(
       { ok: false, error: err.message || "Error interno" },

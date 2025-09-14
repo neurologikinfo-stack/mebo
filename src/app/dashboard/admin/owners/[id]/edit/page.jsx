@@ -3,6 +3,7 @@
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { supabase } from "@/utils/supabase/client";
 
 export default function EditOwnerPage() {
   const { id } = useParams();
@@ -17,8 +18,9 @@ export default function EditOwnerPage() {
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
-  // Cargar datos iniciales
+  // 🔹 Cargar datos iniciales
   useEffect(() => {
     if (!id) return;
 
@@ -44,6 +46,36 @@ export default function EditOwnerPage() {
       }
     })();
   }, [id]);
+
+  // 🔹 Subir avatar a Supabase
+  async function handleAvatarUpload(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setUploading(true);
+
+      const filePath = `owners/${id}/${Date.now()}-${file.name}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("avatars")
+        .upload(filePath, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from("avatars").getPublicUrl(filePath);
+
+      setForm((prev) => ({ ...prev, avatar_url: publicUrl }));
+      toast.success("✅ Avatar cargado");
+    } catch (err) {
+      console.error("❌ Error subiendo avatar:", err.message);
+      toast.error("Error al subir imagen: " + err.message);
+    } finally {
+      setUploading(false);
+    }
+  }
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -76,7 +108,7 @@ export default function EditOwnerPage() {
       <h1 className="text-2xl font-bold">Editar Owner</h1>
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        {/* Avatar + URL */}
+        {/* Avatar */}
         <div className="flex items-center gap-4">
           <img
             src={form.avatar_url || "/default-avatar.png"}
@@ -84,11 +116,10 @@ export default function EditOwnerPage() {
             className="w-16 h-16 rounded-full object-cover border"
           />
           <input
-            type="url"
-            placeholder="URL del avatar"
-            value={form.avatar_url}
-            onChange={(e) => setForm({ ...form, avatar_url: e.target.value })}
-            className="mt-1 w-full px-3 py-2 border rounded text-black"
+            type="file"
+            accept="image/*"
+            onChange={handleAvatarUpload}
+            disabled={uploading}
           />
         </div>
 
@@ -140,10 +171,10 @@ export default function EditOwnerPage() {
         <div className="flex gap-2">
           <button
             type="submit"
-            disabled={saving}
+            disabled={saving || uploading}
             className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
           >
-            {saving ? "Guardando..." : "Guardar cambios"}
+            {saving || uploading ? "Guardando..." : "Guardar cambios"}
           </button>
         </div>
       </form>

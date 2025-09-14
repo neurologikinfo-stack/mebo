@@ -2,12 +2,15 @@
 
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import useUserByClerkId from "@/hooks/useUserByClerkId";
+import useAdminUser from "@/hooks/useAdminUser";
 
 export default function UserDetailPage() {
   const params = useParams();
-  const clerk_id = params?.clerk_id?.toString(); // ✅ acceso seguro
-  const { user, loading, error } = useUserByClerkId(clerk_id);
+  const clerk_id = params?.clerk_id
+    ? decodeURIComponent(params.clerk_id)
+    : null;
+
+  const { user, loading, error } = useAdminUser(clerk_id);
 
   if (!clerk_id) return <p className="p-6">⚠️ Sin parámetro de usuario</p>;
   if (loading) return <p className="p-6">⏳ Cargando usuario...</p>;

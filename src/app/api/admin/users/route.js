@@ -15,17 +15,21 @@ export async function GET(req) {
 
     // 🔹 Si se pasa clerk_id -> buscar usuario específico
     if (clerkId) {
-      const clerkIdNoPrefix = clerkId.replace(/^user_/, "");
-
       const { data, error } = await supabase
         .from("profiles")
         .select("id, clerk_id, email, full_name, role, created_at, updated_at")
-        .or(`clerk_id.eq.${clerkId},clerk_id.eq.${clerkIdNoPrefix}`)
+        .eq("clerk_id", clerkId) // ✅ solo buscamos con prefijo "user_"
         .maybeSingle();
 
       if (error) throw error;
+      if (!data) {
+        return NextResponse.json(
+          { ok: false, error: "Usuario no encontrado" },
+          { status: 404 }
+        );
+      }
 
-      return NextResponse.json({ success: true, user: data });
+      return NextResponse.json({ ok: true, data });
     }
 
     // 🔹 Si no se pasa clerk_id -> listar todos
@@ -36,11 +40,11 @@ export async function GET(req) {
 
     if (error) throw error;
 
-    return NextResponse.json({ success: true, users: data });
+    return NextResponse.json({ ok: true, data });
   } catch (err) {
     console.error("❌ Error en /api/admin/users:", err);
     return NextResponse.json(
-      { success: false, error: err.message },
+      { ok: false, error: err.message },
       { status: 500 }
     );
   }

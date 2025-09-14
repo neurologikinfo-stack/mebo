@@ -1,31 +1,32 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
 
-export default function useAdminUser({ id, clerkId }) {
+export default function useAdminUser(clerk_id) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
 
-  // 🔹 Cargar usuario por ID o ClerkId
+  // 🔹 Cargar usuario por clerk_id
   const fetchUser = useCallback(async () => {
-    if (!id && !clerkId) return;
+    if (!clerk_id) return;
 
     setLoading(true);
     setError(null);
 
     try {
-      const query = new URLSearchParams();
-      if (id) query.append("id", id);
-      if (clerkId) query.append("clerk_id", clerkId);
+      console.log("👉 useAdminUser llamado con clerk_id:", clerk_id);
 
-      const res = await fetch(`/api/admin/users?${query.toString()}`, {
+      const res = await fetch(`/api/admin/users/${clerk_id}`, {
         cache: "no-store",
       });
-
       const result = await res.json();
-      if (!res.ok || !result.ok)
-        throw new Error(result.error || "Error desconocido");
+
+      console.log("👉 Respuesta de API:", result);
+
+      if (!res.ok || !result.ok) {
+        throw new Error(result.error || "No se pudo cargar el usuario");
+      }
 
       setUser(result.data || null);
     } catch (err) {
@@ -34,7 +35,7 @@ export default function useAdminUser({ id, clerkId }) {
     } finally {
       setLoading(false);
     }
-  }, [id, clerkId]);
+  }, [clerk_id]);
 
   useEffect(() => {
     fetchUser();
@@ -42,23 +43,33 @@ export default function useAdminUser({ id, clerkId }) {
 
   // 🔹 Guardar cambios
   async function saveUser(updates) {
-    if (!id && !clerkId) return { ok: false, error: "Falta ID o clerkId" };
+    if (!clerk_id) return { ok: false, error: "Falta clerk_id" };
 
     setSaving(true);
     setError(null);
 
     try {
-      const res = await fetch(`/api/admin/users/${id || clerkId}`, {
+      console.log(
+        "👉 PATCH a /api/admin/users/",
+        clerk_id,
+        " con updates:",
+        updates
+      );
+
+      const res = await fetch(`/api/admin/users/${clerk_id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(updates),
       });
 
       const result = await res.json();
-      if (!res.ok || !result.ok)
-        throw new Error(result.error || "Error al guardar");
+      console.log("👉 Respuesta PATCH:", result);
 
-      setUser((prev) => ({ ...prev, ...updates }));
+      if (!res.ok || !result.ok) {
+        throw new Error(result.error || "Error al guardar");
+      }
+
+      setUser(result.data);
       return { ok: true, data: result.data };
     } catch (err) {
       console.error("❌ Error guardando user:", err.message);
