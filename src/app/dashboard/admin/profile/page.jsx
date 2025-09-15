@@ -1,209 +1,159 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { useUser } from "@clerk/nextjs";
-import { supabase } from "@/utils/supabase/client";
+import { useState, useEffect } from "react";
+import useAdminUser from "@/hooks/useAdminUser";
 
-export default function OwnerProfilePage() {
+export default function AdminProfilePage() {
   const { user } = useUser();
-  const [profile, setProfile] = useState({
+  const clerk_id = user?.id;
+
+  const {
+    user: dbUser,
+    loading,
+    error,
+    saving,
+    saveUser,
+  } = useAdminUser(clerk_id);
+
+  const [form, setForm] = useState({
     full_name: "",
     email: "",
     phone: "",
     avatar_url: "",
+    role: "admin",
   });
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState("");
 
-  // ✅ cargar perfil
+  // 🔹 Inicializar datos
   useEffect(() => {
-    if (!user) return;
+    if (dbUser) {
+      setForm({
+        full_name: dbUser.full_name || user.fullName || "",
+        email: dbUser.email || user.primaryEmailAddress?.emailAddress || "",
+        phone: dbUser.phone || "",
+        avatar_url: dbUser.avatar_url || "",
+        role: dbUser.role || "admin",
+      });
+    }
+  }, [dbUser, user]);
 
-    (async () => {
-      setLoading(true);
+  // 🔹 Upload avatar vía API
+  async function handleAvatarUpload(e) {
+    const file = e.target.files?.[0];
+    if (!file || !clerk_id) return;
 
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("full_name, email, phone, avatar_url")
-        .eq("clerk_id", user.id)
-        .maybeSingle();
+    try {
+      setUploading(true);
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("clerk_id", clerk_id);
 
-      if (!error && data) {
-        setProfile({
-          full_name: data.full_name || "",
-          email: data.email || user.primaryEmailAddress?.emailAddress || "",
-          phone: data.phone || "",
-          avatar_url: data.avatar_url || "",
-        });
-      } else {
-        setProfile({
-          full_name: user.fullName || "",
-          email: user.primaryEmailAddress?.emailAddress || "",
-          phone: "",
-          avatar_url: "",
-        });
-      }
+      const res = await fetch("/api/upload-avatar", {
+        method: "POST",
+        body: formData,
+      });
+      const result = await res.json();
+      if (!res.ok || !result.ok) throw new Error(result.error);
 
-      setLoading(false);
-    })();
-  }, [user]);
+      setForm((prev) => ({ ...prev, avatar_url: result.url }));
+      setMessage("✅ Avatar actualizado");
+    } catch (err) {
+      setMessage("❌ " + err.message);
+    } finally {
+      setUploading(false);
+    }
+  }
 
-  // ✅ guardar cambios
+  // 🔹 Guardar cambios
   async function handleSave(e) {
     e.preventDefault();
-    if (!user) return;
+    if (!clerk_id) return;
 
-    setSaving(true);
+    try {
+      const res = await saveUser(form);
+      if (!res.ok) throw new Error(res.error || "No se pudo actualizar");
 
-    const { error } = await supabase.from("profiles").upsert(
-      {
-        clerk_id: user.id,
-        full_name: profile.full_name,
-        email: profile.email,
-        phone: profile.phone,
-        avatar_url: profile.avatar_url,
-      },
-      { onConflict: ["clerk_id"] }
-    );
-
-    setSaving(false);
-
-    if (error) {
-      setMessage("❌ Error al guardar: " + error.message);
-    } else {
       setMessage("✅ Perfil actualizado correctamente");
-    }
-
-    setTimeout(() => setMessage(""), 4000);
-  }
-
-  // ✅ subir avatar a Supabase Storage
-  async function handleAvatarUpload(e) {
-    const file = e.target.files[0];
-    if (!file || !user) return;
-
-    const fileExt = file.name.split(".").pop();
-    const filePath = `${user.id}/avatar.${fileExt}`;
-
-    const { error: uploadError } = await supabase.storage
-      .from("avatars")
-      .upload(filePath, file, { cacheControl: "3600", upsert: true });
-
-    if (uploadError) {
-      setMessage("❌ Error al subir avatar: " + uploadError.message);
-      return;
-    }
-
-    const {
-      data: { publicUrl },
-    } = supabase.storage.from("avatars").getPublicUrl(filePath);
-
-    // actualizar BD
-    const { error } = await supabase
-      .from("profiles")
-      .update({ avatar_url: publicUrl })
-      .eq("clerk_id", user.id);
-
-    if (error) {
-      setMessage("❌ Error al guardar avatar en BD");
-    } else {
-      setProfile((prev) => ({ ...prev, avatar_url: publicUrl }));
-      setMessage("✅ Avatar actualizado");
+    } catch (err) {
+      setMessage("❌ " + err.message);
     }
   }
+
+  if (!clerk_id) return <p className="p-6">⚠️ No autenticado</p>;
+  if (loading) return <p className="p-6">⏳ Cargando...</p>;
+  if (error) return <p className="p-6 text-red-500">❌ {error}</p>;
 
   return (
     <div className="space-y-8 max-w-lg mx-auto">
-      <h1 className="text-2xl font-bold text-gray-800">Perfil Propietario</h1>
+      <h1 className="text-2xl font-bold">Mi Perfil</h1>
+      {message && <p>{message}</p>}
 
-      {message && (
-        <p
-          className={`text-sm ${
-            message.startsWith("✅") ? "text-green-600" : "text-red-600"
-          }`}
+      <form onSubmit={handleSave} className="space-y-6">
+        {/* Avatar */}
+        <div className="flex items-center gap-4">
+          <img
+            src={form.avatar_url || "/default-avatar.png"}
+            alt="Avatar"
+            className="w-20 h-20 rounded-full border object-cover"
+          />
+          <input
+            type="file"
+            accept="image/*"
+            onChange={handleAvatarUpload}
+            disabled={uploading}
+          />
+        </div>
+
+        <div>
+          <label>Nombre completo</label>
+          <input
+            type="text"
+            value={form.full_name}
+            onChange={(e) => setForm({ ...form, full_name: e.target.value })}
+            className="block w-full border rounded px-3 py-2"
+          />
+        </div>
+
+        <div>
+          <label>Email</label>
+          <input
+            type="email"
+            value={form.email}
+            disabled
+            className="block w-full border rounded px-3 py-2 bg-gray-100"
+          />
+        </div>
+
+        <div>
+          <label>Teléfono</label>
+          <input
+            type="text"
+            value={form.phone}
+            onChange={(e) => setForm({ ...form, phone: e.target.value })}
+            className="block w-full border rounded px-3 py-2"
+          />
+        </div>
+
+        <div>
+          <label>Rol</label>
+          <input
+            type="text"
+            value={form.role}
+            disabled
+            className="block w-full border rounded px-3 py-2 bg-gray-100"
+          />
+        </div>
+
+        <button
+          type="submit"
+          disabled={saving || uploading}
+          className="px-4 py-2 bg-blue-600 text-white rounded"
         >
-          {message}
-        </p>
-      )}
-
-      {loading ? (
-        <p>Cargando...</p>
-      ) : (
-        <form onSubmit={handleSave} className="space-y-6">
-          {/* Avatar */}
-          <div className="flex items-center gap-4">
-            <img
-              src={profile.avatar_url || "/default-avatar.png"}
-              alt="Avatar"
-              className="w-20 h-20 rounded-full border object-cover"
-            />
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Cambiar avatar
-              </label>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleAvatarUpload}
-                className="mt-1 block text-sm"
-              />
-            </div>
-          </div>
-
-          {/* Nombre */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Nombre completo
-            </label>
-            <input
-              type="text"
-              value={profile.full_name}
-              onChange={(e) =>
-                setProfile({ ...profile, full_name: e.target.value })
-              }
-              className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 shadow-sm focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-
-          {/* Email */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Email
-            </label>
-            <input
-              type="email"
-              value={profile.email}
-              disabled
-              className="mt-1 block w-full rounded-lg border border-gray-200 bg-gray-100 px-3 py-2 shadow-sm"
-            />
-          </div>
-
-          {/* Teléfono */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Teléfono
-            </label>
-            <input
-              type="text"
-              value={profile.phone}
-              onChange={(e) =>
-                setProfile({ ...profile, phone: e.target.value })
-              }
-              placeholder="Ej: +1 506 555 1234"
-              className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 shadow-sm focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-
-          <button
-            type="submit"
-            disabled={saving}
-            className="rounded-lg bg-blue-600 px-4 py-2 text-sm text-white shadow hover:bg-blue-500 disabled:opacity-50"
-          >
-            {saving ? "Guardando..." : "Guardar cambios"}
-          </button>
-        </form>
-      )}
+          {saving || uploading ? "Guardando..." : "Guardar cambios"}
+        </button>
+      </form>
     </div>
   );
 }
