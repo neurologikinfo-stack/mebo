@@ -1,119 +1,130 @@
-"use client";
+'use client'
 
-import Link from "next/link";
-import { useActionState } from "react"; // ✅ FIX React 19
-import { createBusinessAction } from "../actions";
-import { Button } from "@/components/ui/button";
-import AddOwnerModal from "@/components/AddOwnerModal";
-import { useEffect, useState } from "react";
-import { toast } from "sonner";
-import { supabase } from "@/utils/supabase/client"; // 👈 usamos Supabase directo
+import Link from 'next/link'
+import { useActionState } from 'react' // ✅ React 19
+import { createBusinessAction } from '../actions'
+import { Button } from '@/components/ui/button'
+import AddOwnerModal from '@/components/AddOwnerModal'
+import { useEffect, useState } from 'react'
+import { toast } from 'sonner'
+import { supabase } from '@/utils/supabase/client'
+import { useRouter } from 'next/navigation' // 👈 para redirección
 
 // 🔹 función para generar slug
 function makeSlug(s) {
   return s
-    ?.normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
+    ?.normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
     .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 60);
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 60)
 }
 
 export default function NewBusinessPageClient() {
-  const [state, formAction, isPending] = useActionState(createBusinessAction, {
-    error: "",
-  });
+  const router = useRouter()
 
-  const [owners, setOwners] = useState([]);
-  const [modalOpen, setModalOpen] = useState(false);
-  const [selectedOwner, setSelectedOwner] = useState("");
+  const [state, formAction, isPending] = useActionState(createBusinessAction, {
+    error: '',
+    ok: false,
+  })
+
+  const [owners, setOwners] = useState([])
+  const [modalOpen, setModalOpen] = useState(false)
+  const [selectedOwner, setSelectedOwner] = useState('')
 
   // 🔹 estados para validación en vivo
-  const [name, setName] = useState("");
-  const [nameStatus, setNameStatus] = useState(null);
+  const [name, setName] = useState('')
+  const [nameStatus, setNameStatus] = useState(null)
 
-  const [slug, setSlug] = useState("");
-  const [slugStatus, setSlugStatus] = useState(null);
+  const [slug, setSlug] = useState('')
+  const [slugStatus, setSlugStatus] = useState(null)
 
   useEffect(() => {
-    fetchOwners();
-  }, []);
+    fetchOwners()
+  }, [])
 
   async function fetchOwners() {
     try {
-      const res = await fetch("/api/admin/owners", { cache: "no-store" });
-      const result = await res.json();
-      if (result.ok) setOwners(result.data);
+      const res = await fetch('/api/admin/owners', { cache: 'no-store' })
+      const result = await res.json()
+      if (result.ok) setOwners(result.data)
     } catch (err) {
-      console.error("❌ Error cargando owners:", err);
-      toast.error("No se pudieron cargar los owners");
+      console.error('❌ Error cargando owners:', err)
+      toast.error('No se pudieron cargar los owners')
     }
   }
 
   function handleOwnerCreated(newOwner) {
-    setOwners((prev) => [newOwner, ...prev]);
-    setSelectedOwner(newOwner.id);
-    toast.success("✅ Nuevo owner invitado");
+    setOwners((prev) => [newOwner, ...prev])
+    setSelectedOwner(newOwner.id)
+    toast.success('✅ Nuevo owner invitado')
   }
 
   // 🔹 generar slug automáticamente
   useEffect(() => {
-    const generated = makeSlug(name);
-    setSlug(generated);
-  }, [name]);
+    const generated = makeSlug(name)
+    setSlug(generated)
+  }, [name])
 
   // 🔹 validar nombre en Supabase
   useEffect(() => {
     if (!name) {
-      setNameStatus(null);
-      return;
+      setNameStatus(null)
+      return
     }
 
     const checkName = setTimeout(async () => {
       const { data, error } = await supabase
-        .from("businesses")
-        .select("id")
-        .eq("name", name)
-        .maybeSingle();
+        .from('businesses')
+        .select('id')
+        .eq('name', name)
+        .maybeSingle()
 
       if (error) {
-        setNameStatus(null);
+        setNameStatus(null)
       } else if (data) {
-        setNameStatus("taken");
+        setNameStatus('taken')
       } else {
-        setNameStatus("available");
+        setNameStatus('available')
       }
-    }, 400);
+    }, 400)
 
-    return () => clearTimeout(checkName);
-  }, [name]);
+    return () => clearTimeout(checkName)
+  }, [name])
 
   // 🔹 validar slug en Supabase
   useEffect(() => {
     if (!slug) {
-      setSlugStatus(null);
-      return;
+      setSlugStatus(null)
+      return
     }
 
     const checkSlug = setTimeout(async () => {
       const { data, error } = await supabase
-        .from("businesses")
-        .select("id")
-        .eq("slug", slug)
-        .maybeSingle();
+        .from('businesses')
+        .select('id')
+        .eq('slug', slug)
+        .maybeSingle()
 
       if (error) {
-        setSlugStatus(null);
+        setSlugStatus(null)
       } else if (data) {
-        setSlugStatus("taken");
+        setSlugStatus('taken')
       } else {
-        setSlugStatus("available");
+        setSlugStatus('available')
       }
-    }, 400);
+    }, 400)
 
-    return () => clearTimeout(checkSlug);
-  }, [slug]);
+    return () => clearTimeout(checkSlug)
+  }, [slug])
+
+  // 🚀 Redirigir al listado cuando se cree correctamente
+  useEffect(() => {
+    if (state?.ok) {
+      router.push('/dashboard/admin/business')
+    }
+  }, [state, router])
 
   return (
     <main className="mx-auto max-w-xl p-6 space-y-6">
@@ -137,13 +148,11 @@ export default function NewBusinessPageClient() {
             onChange={(e) => setName(e.target.value)}
             className="mt-1 w-full rounded border border-input bg-background px-3 py-2"
           />
-          {nameStatus === "available" && (
+          {nameStatus === 'available' && (
             <p className="text-xs text-green-600 mt-1">✅ Disponible</p>
           )}
-          {nameStatus === "taken" && (
-            <p className="text-xs text-red-600 mt-1">
-              ❌ Ya existe este nombre
-            </p>
+          {nameStatus === 'taken' && (
+            <p className="text-xs text-red-600 mt-1">❌ Ya existe este nombre</p>
           )}
         </label>
 
@@ -157,12 +166,10 @@ export default function NewBusinessPageClient() {
             readOnly
             className="mt-1 w-full rounded border border-input bg-gray-100 px-3 py-2 text-gray-600"
           />
-          {slugStatus === "available" && (
+          {slugStatus === 'available' && (
             <p className="text-xs text-green-600 mt-1">✅ Disponible</p>
           )}
-          {slugStatus === "taken" && (
-            <p className="text-xs text-red-600 mt-1">❌ Ya está en uso</p>
-          )}
+          {slugStatus === 'taken' && <p className="text-xs text-red-600 mt-1">❌ Ya está en uso</p>}
         </label>
 
         <Field name="phone" label="Teléfono" />
@@ -173,35 +180,28 @@ export default function NewBusinessPageClient() {
         <Field name="postal_code" label="Código Postal" />
         <Field name="country" label="País" defaultValue="Canadá" />
 
-        {/* Asignar Owner */}
+        {/* Owner opcional */}
         <div className="space-y-2">
-          <label className="block text-sm font-medium">Asignar a Owner</label>
+          <label className="block text-sm font-medium">(Opcional) Asignar a Owner</label>
           <select
             name="owner_id"
-            required
             value={selectedOwner}
             onChange={(e) => setSelectedOwner(e.target.value)}
             className="mt-1 w-full rounded border border-input bg-background px-3 py-2 focus:ring-2 focus:ring-ring"
           >
-            <option value="">Selecciona un owner</option>
+            <option value="">Sin owner asignado</option>
             {owners.length === 0 ? (
               <option disabled>Cargando...</option>
             ) : (
               owners.map((o) => (
                 <option key={o.id} value={o.id}>
-                  {o.full_name?.trim()
-                    ? o.full_name
-                    : o.email || `Owner #${o.id}`}
+                  {o.full_name?.trim() ? o.full_name : o.email || `Owner #${o.id}`}
                 </option>
               ))
             )}
           </select>
 
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => setModalOpen(true)}
-          >
+          <Button type="button" variant="outline" onClick={() => setModalOpen(true)}>
             + Invitar nuevo Owner
           </Button>
         </div>
@@ -211,7 +211,7 @@ export default function NewBusinessPageClient() {
         <div className="flex gap-2">
           <SubmitButton
             pending={isPending}
-            disabled={nameStatus === "taken" || slugStatus === "taken"}
+            disabled={nameStatus === 'taken' || slugStatus === 'taken'}
           />
           <Button variant="outline" asChild>
             <Link href="/dashboard/admin/business">Cancelar</Link>
@@ -225,20 +225,20 @@ export default function NewBusinessPageClient() {
         onCreated={handleOwnerCreated}
       />
     </main>
-  );
+  )
 }
 
 /* 🔹 Botón con estado pending */
 function SubmitButton({ disabled, pending }) {
   return (
     <Button type="submit" disabled={pending || disabled}>
-      {pending ? "Guardando…" : "Guardar"}
+      {pending ? 'Guardando…' : 'Guardar'}
     </Button>
-  );
+  )
 }
 
 /* 🔹 Input genérico */
-function Field({ label, name, type = "text", required, defaultValue }) {
+function Field({ label, name, type = 'text', required, defaultValue }) {
   return (
     <label className="block space-y-1">
       <span className="text-sm font-medium">{label}</span>
@@ -250,7 +250,7 @@ function Field({ label, name, type = "text", required, defaultValue }) {
         className="mt-1 w-full rounded border border-input bg-background px-3 py-2 focus:ring-2 focus:ring-ring"
       />
     </label>
-  );
+  )
 }
 
 /* 🔹 Textarea genérico */
@@ -265,5 +265,5 @@ function Textarea({ label, name, rows = 3, defaultValue }) {
         className="mt-1 w-full rounded border border-input bg-background px-3 py-2 focus:ring-2 focus:ring-ring"
       />
     </label>
-  );
+  )
 }

@@ -33,7 +33,6 @@ async function generateUniqueSlug(baseSlug, supabase) {
  */
 async function validateUniqueName(name, supabase) {
   const { data } = await supabase.from('businesses').select('id').eq('name', name).maybeSingle()
-
   return !data
 }
 
@@ -54,10 +53,9 @@ export async function createBusinessAction(prevState, formData) {
     const province = formData.get('province')?.trim() || null
     const postal_code = formData.get('postal_code')?.trim() || null
     const country = formData.get('country')?.trim() || null
-    const owner_id = formData.get('owner_id')
+    const owner_id = formData.get('owner_id') || null
 
     if (!name) return { error: 'El nombre es obligatorio.' }
-    if (!owner_id) return { error: 'Debes asignar un owner.' }
 
     // Validar nombre único
     const isNameAvailable = await validateUniqueName(name, supabase)
@@ -69,28 +67,36 @@ export async function createBusinessAction(prevState, formData) {
     slug = slug || slugify(name, { lower: true, strict: true })
     slug = await generateUniqueSlug(slug, supabase)
 
-    // Buscar owner
-    const { data: owner, error: ownerError } = await supabase
-      .from('owners')
-      .select('id, clerk_id, status')
-      .eq('id', owner_id)
-      .maybeSingle()
+    // 🔹 Owner opcional
+    let owner = null
+    let createdBy = null
+    let ownerClerkId = null
 
-    if (ownerError || !owner) {
-      return { error: 'No se encontró el owner.' }
+    if (owner_id) {
+      const { data: foundOwner, error: ownerError } = await supabase
+        .from('owners')
+        .select('id, clerk_id, status')
+        .eq('id', owner_id)
+        .maybeSingle()
+
+      if (ownerError || !foundOwner) {
+        return { error: 'No se encontró el owner.' }
+      }
+
+      owner = foundOwner
+      ownerClerkId = owner.clerk_id
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('clerk_id', owner.clerk_id)
+        .maybeSingle()
+
+      createdBy = profile ? profile.id : null
     }
 
-    // Buscar profile (puede no existir si el owner está en pending)
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('id')
-      .eq('clerk_id', owner.clerk_id)
-      .maybeSingle()
-
-    const createdBy = profile ? profile.id : null
-
     // Insertar negocio
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from('businesses')
       .insert([
         {
@@ -104,13 +110,12 @@ export async function createBusinessAction(prevState, formData) {
           province,
           postal_code,
           country,
-          owner_id: owner.id,
-          owner_clerk_id: owner.clerk_id,
+          owner_id: owner ? owner.id : null,
+          owner_clerk_id: ownerClerkId,
           created_by: createdBy,
-          logo_url: null, // 👈 se añadirá al editar
+          logo_url: null,
         },
       ])
-      .select('id, slug')
       .single()
 
     if (error) {
@@ -120,8 +125,8 @@ export async function createBusinessAction(prevState, formData) {
       return { error: msg }
     }
 
-    // ✅ Éxito: redirigir
-    redirect('/dashboard/admin/business')
+    // ✅ éxito → devolvemos ok
+    return { ok: true }
   } catch (err) {
     console.error('❌ Excepción en createBusinessAction:', err)
     return { error: err.message }
@@ -135,7 +140,44 @@ export async function updateBusiness(id, updates) {
   try {
     const supabase = supabaseServer()
 
-    const { error } = await supabase.from('businesses').update(updates).eq('id', id)
+    // 🔹 Si en updates viene un owner_id, buscamos los datos
+    let ownerId = updates.owner_id || null
+    let ownerClerkId = null
+    let createdBy = null
+
+    if (ownerId) {
+      const { data: foundOwner, error: ownerError } = await supabase
+        .from('owners')
+        .select('id, clerk_id, status')
+        .eq('id', ownerId)
+        .maybeSingle()
+
+      if (ownerError || !foundOwner) {
+        return { ok: false, error: 'No se encontró el owner.' }
+      }
+
+      ownerClerkId = foundOwner.clerk_id
+
+      // Buscar profile del owner
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('clerk_id', foundOwner.clerk_id)
+        .maybeSingle()
+
+      createdBy = profile ? profile.id : null
+    }
+
+    // 🔹 Actualizamos el negocio
+    const { error } = await supabase
+      .from('businesses')
+      .update({
+        ...updates,
+        owner_id: ownerId,
+        owner_clerk_id: ownerClerkId,
+        created_by: createdBy,
+      })
+      .eq('id', id)
 
     if (error) {
       console.error('❌ Error actualizando negocio:', error)
