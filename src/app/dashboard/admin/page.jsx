@@ -13,7 +13,7 @@ export default async function AdminHomePage() {
     .from("businesses")
     .select("*", { count: "exact", head: true });
 
-  // ✅ Últimos 5 usuarios con permisos
+  // ✅ Últimos 5 usuarios con avatar y permisos
   const { data: latestUsers } = await supabase
     .from("profiles")
     .select(
@@ -21,6 +21,7 @@ export default async function AdminHomePage() {
       clerk_id,
       full_name,
       email,
+      avatar_url,
       created_at,
       user_permissions (
         permissions (name)
@@ -30,10 +31,10 @@ export default async function AdminHomePage() {
     .order("created_at", { ascending: false })
     .limit(5);
 
-  // ✅ Últimos 5 negocios
+  // ✅ Últimos 5 negocios con logo
   const { data: latestBusinesses } = await supabase
     .from("businesses")
-    .select("id, name, email, created_at")
+    .select("id, name, email, logo_url, created_at")
     .order("created_at", { ascending: false })
     .limit(5);
 
@@ -60,21 +61,28 @@ export default async function AdminHomePage() {
           {latestUsers?.map((u) => (
             <li
               key={u.clerk_id}
-              className="py-2 px-3 hover:bg-muted/50 cursor-pointer flex justify-between"
+              className="py-2 px-3 hover:bg-muted/50 cursor-pointer flex justify-between items-center"
             >
               <Link
                 href={`/dashboard/admin/users/${u.clerk_id}`}
-                className="w-full flex justify-between"
+                className="w-full flex justify-between items-center"
               >
-                <span>
-                  {u.full_name || "Sin nombre"}
-                  <br />
-                  <span className="text-xs text-muted-foreground">
-                    {(u.user_permissions || [])
-                      .map((up) => up.permissions?.name)
-                      .join(", ") || "Sin permisos"}
-                  </span>
-                </span>
+                <div className="flex items-center gap-3">
+                  <img
+                    src={u.avatar_url || "/default-avatar.png"}
+                    alt="Avatar"
+                    className="w-8 h-8 rounded-full object-cover border"
+                  />
+                  <div>
+                    <span>{u.full_name || "Sin nombre"}</span>
+                    <br />
+                    <span className="text-xs text-muted-foreground">
+                      {(u.user_permissions || [])
+                        .map((up) => up.permissions?.name)
+                        .join(", ") || "Sin permisos"}
+                    </span>
+                  </div>
+                </div>
                 <span className="text-sm text-muted-foreground">{u.email}</span>
               </Link>
             </li>
@@ -95,13 +103,20 @@ export default async function AdminHomePage() {
           {latestBusinesses?.map((b) => (
             <li
               key={b.id}
-              className="py-2 px-3 hover:bg-muted/50 cursor-pointer flex justify-between"
+              className="py-2 px-3 hover:bg-muted/50 cursor-pointer flex justify-between items-center"
             >
               <Link
                 href={`/dashboard/admin/business/${b.id}`}
-                className="w-full flex justify-between"
+                className="w-full flex justify-between items-center"
               >
-                <span>{b.name}</span>
+                <div className="flex items-center gap-3">
+                  <img
+                    src={b.logo_url || "/default-business.png"}
+                    alt="Logo"
+                    className="w-8 h-8 rounded object-cover border"
+                  />
+                  <span>{b.name}</span>
+                </div>
                 <span className="text-sm text-muted-foreground">
                   {b.email || "Sin email"}
                 </span>
