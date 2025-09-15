@@ -1,59 +1,54 @@
-"use client";
+import { supabaseServer } from '@/utils/supabase/server'
+import Link from 'next/link'
 
-import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
-import { supabase } from "@/utils/supabase/client";
-import Link from "next/link";
+export default async function BusinessDetailPage({ params }) {
+  const supabase = supabaseServer()
+  const { id } = params
 
-export default function BusinessDetailPage() {
-  const { id } = useParams();
-  const [business, setBusiness] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const { data: business, error } = await supabase
+    .from('businesses')
+    .select('id, name, slug, email, phone, description, created_at, logo_url')
+    .eq('id', id)
+    .single()
 
-  useEffect(() => {
-    if (!id) return;
-    (async () => {
-      const { data, error } = await supabase
-        .from("businesses")
-        .select("id, name, slug, email, phone, description, created_at")
-        .eq("id", id)
-        .single();
-      if (!error) setBusiness(data);
-      setLoading(false);
-    })();
-  }, [id]);
-
-  if (loading) return <p className="text-gray-500">Cargando...</p>;
-  if (!business) return <p className="text-red-500">Negocio no encontrado.</p>;
+  if (error || !business) {
+    return (
+      <main className="mx-auto max-w-xl p-6">
+        <h1 className="text-xl font-semibold">Negocio no encontrado</h1>
+      </main>
+    )
+  }
 
   return (
-    <div>
-      <h1 className="text-2xl font-bold text-gray-800 mb-4">{business.name}</h1>
-      <p className="text-sm text-gray-600 mb-2">Slug: @{business.slug}</p>
-      <p className="text-sm text-gray-600 mb-2">
-        Email: {business.email || "—"}
-      </p>
-      <p className="text-sm text-gray-600 mb-2">
-        Teléfono: {business.phone || "—"}
-      </p>
-      <p className="text-sm text-gray-600 mb-6">
-        {business.description || "Sin descripción"}
-      </p>
+    <main className="mx-auto max-w-xl p-6 space-y-4">
+      <h1 className="text-2xl font-bold">{business.name}</h1>
 
-      <div className="flex gap-4">
+      {/* Logo */}
+      {business.logo_url && (
+        <img
+          src={business.logo_url}
+          alt={`Logo de ${business.name}`}
+          className="w-24 h-24 object-contain mb-4 border rounded"
+        />
+      )}
+
+      <p className="text-gray-600">Slug: {business.slug}</p>
+      <p className="text-gray-600">Teléfono: {business.phone || 'N/A'}</p>
+      <p className="text-gray-600">Email: {business.email || 'N/A'}</p>
+      <p className="text-gray-600">Descripción: {business.description || 'N/A'}</p>
+      <p className="text-gray-600">Creado: {new Date(business.created_at).toLocaleDateString()}</p>
+
+      <div className="flex gap-2 mt-4">
         <Link
           href={`/dashboard/admin/business/${business.id}/edit`}
-          className="px-4 py-2 rounded bg-blue-600 text-white text-sm shadow hover:bg-blue-500"
+          className="rounded bg-black px-4 py-2 text-white"
         >
           Editar
         </Link>
-        <Link
-          href={`/business/${business.slug}`}
-          className="px-4 py-2 rounded bg-gray-200 text-gray-800 text-sm shadow hover:bg-gray-300"
-        >
-          Ver público
+        <Link href="/dashboard/admin/business" className="rounded border px-4 py-2">
+          Volver
         </Link>
       </div>
-    </div>
-  );
+    </main>
+  )
 }
