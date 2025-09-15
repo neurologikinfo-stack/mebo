@@ -32,6 +32,7 @@ export async function updateBusinessWithLogo(business, formData) {
     }
 
     const { error } = await supabase.from('businesses').update(updatedFields).eq('id', business.id)
+
     if (error) throw new Error(`Error actualizando negocio: ${error.message}`)
   } catch (err) {
     console.error('❌ updateBusinessWithLogo error:', err)
@@ -41,10 +42,18 @@ export async function updateBusinessWithLogo(business, formData) {
   redirect('/dashboard/owner/businesses')
 }
 
-export async function removeBusiness(id) {
+// 🔹 Soft delete (activar/desactivar negocio)
+export async function toggleBusinessStatus(id, deletedAt) {
   const supabase = supabaseServer()
-  const { error } = await supabase.from('businesses').delete().eq('id', id)
-  if (error) throw new Error('Error eliminando negocio')
+
+  const { error } = await supabase
+    .from('businesses')
+    .update({
+      deleted_at: deletedAt ? null : new Date().toISOString(),
+    })
+    .eq('id', id)
+
+  if (error) throw new Error('Error actualizando estado del negocio')
 
   redirect('/dashboard/owner/businesses')
 }

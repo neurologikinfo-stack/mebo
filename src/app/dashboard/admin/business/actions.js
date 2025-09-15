@@ -2,7 +2,6 @@
 
 import { supabaseServer } from '@/utils/supabase/server'
 import slugify from 'slugify'
-import { redirect } from 'next/navigation'
 
 /**
  * Genera un slug único
@@ -192,7 +191,33 @@ export async function updateBusiness(id, updates) {
 }
 
 /**
- * Server Action: Eliminar negocio
+ * Server Action: Activar / Desactivar negocio (soft delete)
+ */
+export async function toggleBusinessStatus(id, deletedAt) {
+  try {
+    const supabase = supabaseServer()
+
+    const { error } = await supabase
+      .from('businesses')
+      .update({
+        deleted_at: deletedAt ? null : new Date().toISOString(),
+      })
+      .eq('id', id)
+
+    if (error) {
+      console.error('❌ Error cambiando estado del negocio:', error)
+      return { ok: false, error: error.message }
+    }
+
+    return { ok: true }
+  } catch (err) {
+    console.error('❌ Excepción en toggleBusinessStatus:', err)
+    return { ok: false, error: err.message }
+  }
+}
+
+/**
+ * Server Action: Eliminar negocio (hard delete, solo admin)
  */
 export async function deleteBusiness(id) {
   try {

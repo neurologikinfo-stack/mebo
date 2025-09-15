@@ -1,23 +1,20 @@
-import { supabaseServer } from "@/utils/supabase/server";
-import { NextResponse } from "next/server";
+import { NextResponse } from 'next/server'
+import { supabaseServer } from '@/utils/supabase/server'
 
-// GET /api/admin/businesses
 export async function GET() {
-  const supabase = supabaseServer();
+  try {
+    const supabase = supabaseServer()
 
-  const { data, error } = await supabase
-    .from("businesses")
-    .select(
-      "id, name, slug, email, phone, logo_url, deleted_at, address, city, province, country"
-    )
-    .order("created_at", { ascending: false });
+    const { data, error } = await supabase
+      .from('businesses')
+      .select('id, name, slug, email, phone, logo_url, created_at, deleted_at')
+      .order('created_at', { ascending: false })
 
-  if (error) {
-    return NextResponse.json(
-      { ok: false, error: error.message },
-      { status: 400 }
-    );
+    if (error) throw error
+
+    return NextResponse.json({ ok: true, data })
+  } catch (err) {
+    console.error('❌ Error cargando negocios:', err)
+    return NextResponse.json({ ok: false, error: err.message }, { status: 500 })
   }
-
-  return NextResponse.json({ ok: true, data });
 }

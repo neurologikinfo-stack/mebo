@@ -46,33 +46,19 @@ export default function BusinessListPage() {
     setLoading(false)
   }
 
-  async function handleDelete(id) {
-    if (!confirm('¿Seguro que quieres eliminar este negocio?')) return
+  async function handleToggleStatus(id, deletedAt) {
     setProcessingId(id)
     try {
-      const res = await fetch(`/api/admin/businesses/${id}`, {
-        method: 'DELETE',
-      })
-      const result = await res.json()
-      if (!result.ok) throw new Error(result.error)
-      fetchBusinesses()
-    } catch (e) {
-      alert('Error eliminando negocio: ' + e.message)
-    }
-    setProcessingId(null)
-  }
-
-  async function handleRestore(id) {
-    setProcessingId(id)
-    try {
-      const res = await fetch(`/api/admin/businesses/${id}`, {
+      const res = await fetch(`/api/admin/businesses/${id}/toggle`, {
         method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ deletedAt }),
       })
       const result = await res.json()
       if (!result.ok) throw new Error(result.error)
       fetchBusinesses()
     } catch (e) {
-      alert('Error restaurando negocio: ' + e.message)
+      alert('Error cambiando estado: ' + e.message)
     }
     setProcessingId(null)
   }
@@ -114,7 +100,7 @@ export default function BusinessListPage() {
                 className="hover:bg-muted/50 transition-colors cursor-pointer"
                 onClick={() => router.push(`/dashboard/admin/business/${b.id}`)}
               >
-                {/* Logo con fallback */}
+                {/* Logo */}
                 <TableCell>
                   <img
                     src={b.logo_url || '/default-business.png'}
@@ -129,11 +115,11 @@ export default function BusinessListPage() {
                 <TableCell>{b.email || '—'}</TableCell>
                 <TableCell>{b.phone || '—'}</TableCell>
 
-                {/* Estado con badge */}
+                {/* Estado */}
                 <TableCell>
                   {b.deleted_at ? (
                     <span className="px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400">
-                      Eliminado
+                      Inactivo
                     </span>
                   ) : (
                     <span className="px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-400">
@@ -163,23 +149,21 @@ export default function BusinessListPage() {
                       >
                         Editar
                       </DropdownMenuItem>
-                      {b.deleted_at ? (
-                        <DropdownMenuItem
-                          onClick={() => handleRestore(b.id)}
-                          disabled={processingId === b.id}
-                          className="text-green-600 dark:text-green-400"
-                        >
-                          {processingId === b.id ? 'Restaurando…' : 'Restaurar'}
-                        </DropdownMenuItem>
-                      ) : (
-                        <DropdownMenuItem
-                          onClick={() => handleDelete(b.id)}
-                          disabled={processingId === b.id}
-                          className="text-destructive"
-                        >
-                          {processingId === b.id ? 'Eliminando…' : 'Eliminar'}
-                        </DropdownMenuItem>
-                      )}
+                      <DropdownMenuItem
+                        onClick={() => handleToggleStatus(b.id, b.deleted_at)}
+                        disabled={processingId === b.id}
+                        className={
+                          b.deleted_at ? 'text-green-600 dark:text-green-400' : 'text-destructive'
+                        }
+                      >
+                        {processingId === b.id
+                          ? b.deleted_at
+                            ? 'Activando…'
+                            : 'Desactivando…'
+                          : b.deleted_at
+                          ? 'Activar'
+                          : 'Desactivar'}
+                      </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </TableCell>
