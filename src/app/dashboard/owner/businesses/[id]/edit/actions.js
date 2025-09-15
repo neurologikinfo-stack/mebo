@@ -57,3 +57,17 @@ export async function toggleBusinessStatus(id, deletedAt) {
 
   redirect('/dashboard/owner/businesses')
 }
+
+// 🔹 Delete definitivo de un negocio
+export async function removeBusiness(id) {
+  const supabase = supabaseServer()
+
+  const { error } = await supabase.from('businesses').delete().eq('id', id)
+
+  if (error) {
+    console.error('❌ Error eliminando negocio:', error.message)
+    throw new Error(`Error eliminando negocio: ${error.message}`)
+  }
+
+  redirect('/dashboard/owner/businesses')
+}
