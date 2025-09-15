@@ -45,19 +45,19 @@ export default function EditUserPage() {
     try {
       setUploading(true);
 
-      const filePath = `${clerk_id}/${Date.now()}-${file.name}`;
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("clerk_id", clerk_id);
 
-      const { error: uploadError } = await supabase.storage
-        .from("avatars")
-        .upload(filePath, file, { upsert: true });
+      const res = await fetch("/api/upload-avatar", {
+        method: "POST",
+        body: formData,
+      });
 
-      if (uploadError) throw uploadError;
+      const result = await res.json();
+      if (!res.ok || !result.ok) throw new Error(result.error);
 
-      const {
-        data: { publicUrl },
-      } = supabase.storage.from("avatars").getPublicUrl(filePath);
-
-      setForm((prev) => ({ ...prev, avatar_url: publicUrl }));
+      setForm((prev) => ({ ...prev, avatar_url: result.url }));
     } catch (err) {
       console.error("❌ Error subiendo avatar:", err.message);
       setErr("Error al subir imagen: " + err.message);
@@ -146,17 +146,13 @@ export default function EditUserPage() {
 
         <div>
           <label className="block text-sm font-medium">Rol</label>
-          <select
+          <input
+            type="text"
             value={form.role}
-            onChange={(e) => setForm({ ...form, role: e.target.value })}
-            className="mt-1 block w-full px-3 py-2 border rounded text-black"
-          >
-            <option value="owner">Owner</option>
-            <option value="customer">Customer</option>
-            <option value="staff">Staff</option>
-            <option value="user">User</option>
-            <option value="admin">Admin</option>
-          </select>
+            disabled
+            className="mt-1 block w-full px-3 py-2 border rounded text-gray-500 bg-gray-100 cursor-not-allowed"
+          />
+          <p className="text-xs text-muted-foreground mt-1"></p>
         </div>
 
         <button

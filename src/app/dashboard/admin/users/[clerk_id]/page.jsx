@@ -30,25 +30,32 @@ export default function UserDetailPage() {
       </div>
 
       <div className="rounded-lg border bg-card text-card-foreground shadow-sm p-6 space-y-3">
-        <p>
-          <span className="font-medium">Nombre:</span> {user.full_name || "—"}
-        </p>
-        <p>
-          <span className="font-medium">Email:</span> {user.email}
-        </p>
+        {/* Avatar */}
+        <div className="flex items-center gap-4 mb-4">
+          <img
+            src={user.avatar_url || "/default-avatar.png"}
+            alt={user.full_name || "Avatar"}
+            className="w-20 h-20 rounded-full object-cover border"
+          />
+          <div>
+            <p className="text-lg font-semibold">{user.full_name || "—"}</p>
+            <p className="text-sm text-muted-foreground">{user.email}</p>
+          </div>
+        </div>
+
         <p>
           <span className="font-medium">Rol:</span>{" "}
           <span
             className={`px-2 py-1 rounded-full text-xs font-medium
-              ${
-                user.role === "admin"
-                  ? "bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400"
-                  : user.role === "owner"
-                  ? "bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400"
-                  : user.role === "staff"
-                  ? "bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-400"
-                  : "bg-muted text-muted-foreground"
-              }`}
+        ${
+          user.role === "admin"
+            ? "bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400"
+            : user.role === "owner"
+            ? "bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400"
+            : user.role === "staff"
+            ? "bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-400"
+            : "bg-muted text-muted-foreground"
+        }`}
           >
             {user.role}
           </span>
