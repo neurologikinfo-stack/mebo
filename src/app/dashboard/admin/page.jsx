@@ -1,21 +1,21 @@
-import { supabaseServer } from "@/utils/supabase/server";
-import Link from "next/link";
+import { supabaseServer } from '@/utils/supabase/server'
+import Link from 'next/link'
 
 export default async function AdminHomePage() {
-  const supabase = supabaseServer();
+  const supabase = supabaseServer()
 
   // ✅ KPIs
   const { count: usersCount } = await supabase
-    .from("profiles")
-    .select("*", { count: "exact", head: true });
+    .from('profiles')
+    .select('*', { count: 'exact', head: true })
 
   const { count: businessCount } = await supabase
-    .from("businesses")
-    .select("*", { count: "exact", head: true });
+    .from('businesses')
+    .select('*', { count: 'exact', head: true })
 
-  // ✅ Últimos 5 usuarios con avatar y permisos
+  // ✅ Últimos 5 usuarios con avatar, permisos y rol
   const { data: latestUsers } = await supabase
-    .from("profiles")
+    .from('profiles')
     .select(
       `
       clerk_id,
@@ -23,20 +23,21 @@ export default async function AdminHomePage() {
       email,
       avatar_url,
       created_at,
+      role,
       user_permissions (
         permissions (name)
       )
     `
     )
-    .order("created_at", { ascending: false })
-    .limit(5);
+    .order('created_at', { ascending: false })
+    .limit(5)
 
   // ✅ Últimos 5 negocios con logo
   const { data: latestBusinesses } = await supabase
-    .from("businesses")
-    .select("id, name, email, logo_url, created_at")
-    .order("created_at", { ascending: false })
-    .limit(5);
+    .from('businesses')
+    .select('id, name, email, logo_url, created_at')
+    .order('created_at', { ascending: false })
+    .limit(5)
 
   return (
     <div className="space-y-8">
@@ -69,17 +70,17 @@ export default async function AdminHomePage() {
               >
                 <div className="flex items-center gap-3">
                   <img
-                    src={u.avatar_url || "/default-avatar.png"}
+                    src={u.avatar_url || '/default-avatar.png'}
                     alt="Avatar"
                     className="w-8 h-8 rounded-full object-cover border"
                   />
                   <div>
-                    <span>{u.full_name || "Sin nombre"}</span>
+                    <span>{u.full_name || 'Sin nombre'}</span>
                     <br />
                     <span className="text-xs text-muted-foreground">
-                      {(u.user_permissions || [])
-                        .map((up) => up.permissions?.name)
-                        .join(", ") || "Sin permisos"}
+                      {(u.user_permissions || []).map((up) => up.permissions?.name).join(', ') ||
+                        u.role ||
+                        'Sin rol'}
                     </span>
                   </div>
                 </div>
@@ -111,15 +112,13 @@ export default async function AdminHomePage() {
               >
                 <div className="flex items-center gap-3">
                   <img
-                    src={b.logo_url || "/default-business.png"}
+                    src={b.logo_url || '/default-business.png'}
                     alt="Logo"
                     className="w-8 h-8 rounded object-cover border"
                   />
                   <span>{b.name}</span>
                 </div>
-                <span className="text-sm text-muted-foreground">
-                  {b.email || "Sin email"}
-                </span>
+                <span className="text-sm text-muted-foreground">{b.email || 'Sin email'}</span>
               </Link>
             </li>
           ))}
@@ -132,5 +131,5 @@ export default async function AdminHomePage() {
         </Link>
       </div>
     </div>
-  );
+  )
 }

@@ -13,15 +13,19 @@ export default function BusinessHeader() {
 
   return (
     <header className="mb-6 border-b pb-4">
-      <h1 className="text-3xl font-bold text-gray-800">Negocios</h1>
-      <p className="text-sm text-gray-600">Administra todos los negocios desde este panel.</p>
+      {/* Título */}
+      <div className="text-center md:text-left">
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">Negocios</h1>
+        <p className="text-sm text-gray-600">Administra todos los negocios desde este panel.</p>
+      </div>
 
-      <nav className="mt-4 flex gap-4 text-sm">
+      {/* Navegación */}
+      <nav className="mt-4 flex flex-col sm:flex-row gap-2 sm:gap-4 text-sm">
         {navItems.map((item) => (
           <Link
             key={item.href}
             href={item.href}
-            className={`px-3 py-1 rounded ${
+            className={`px-3 py-2 rounded transition ${
               pathname === item.href
                 ? 'bg-blue-600 text-white font-medium'
                 : 'text-gray-600 hover:bg-gray-100'
