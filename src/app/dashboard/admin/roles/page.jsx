@@ -68,7 +68,9 @@ export default function RolesPage() {
   async function handlePreviewSeed() {
     try {
       setSeeding(true);
-      const res = await fetch("/api/admin/roles/seed/preview");
+      const res = await fetch("/api/admin/roles/seed/preview", {
+        method: "GET",
+      });
       const result = await res.json();
       if (!res.ok || !result.ok) throw new Error(result.error);
 
@@ -103,6 +105,11 @@ export default function RolesPage() {
 
   // 🔹 Agrupar permisos por recurso/acción
   function groupByResource(perms) {
+    if (!Array.isArray(perms)) {
+      // si viene como objeto {flat, grouped}, nos quedamos con flat
+      perms = perms?.flat || [];
+    }
+
     return perms.reduce((acc, perm) => {
       const [resource, action] = perm.split(".");
       if (!acc[resource]) acc[resource] = {};
@@ -115,24 +122,28 @@ export default function RolesPage() {
 
   return (
     <div className="p-6 space-y-6">
-      {/* Header con botón crear y seed */}
+      {/* Header con botón crear y seed (solo en dev) */}
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Gestión de Roles</h1>
         <div className="flex gap-2">
-          <button
-            onClick={handlePreviewSeed}
-            disabled={seeding}
-            className="px-4 py-2 bg-yellow-600 text-white rounded hover:bg-yellow-700 transition text-sm"
-          >
-            {seeding ? "..." : "Preview seed"}
-          </button>
-          <button
-            onClick={handleRunSeed}
-            disabled={seeding}
-            className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 transition text-sm"
-          >
-            {seeding ? "..." : "Run seed"}
-          </button>
+          {process.env.NODE_ENV === "development" && (
+            <>
+              <button
+                onClick={handlePreviewSeed}
+                disabled={seeding}
+                className="px-4 py-2 bg-yellow-600 text-white rounded hover:bg-yellow-700 transition text-sm"
+              >
+                {seeding ? "..." : "Preview seed"}
+              </button>
+              <button
+                onClick={handleRunSeed}
+                disabled={seeding}
+                className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 transition text-sm"
+              >
+                {seeding ? "..." : "Run seed"}
+              </button>
+            </>
+          )}
           <Link
             href="/dashboard/admin/roles/new"
             className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition text-sm"
@@ -200,6 +211,7 @@ export default function RolesPage() {
       </div>
 
       {/* Modal preview con tabla de permisos */}
+      {/* Modal preview con tabla de permisos */}
       <Dialog open={openPreview} onOpenChange={setOpenPreview}>
         <DialogContent className="max-w-3xl">
           <DialogHeader>
@@ -208,11 +220,12 @@ export default function RolesPage() {
 
           {preview ? (
             <div className="space-y-6">
-              {preview.map((role) => {
-                const grouped = groupByResource(role.permissions);
+              {preview.roles.map((roleName) => {
+                const roleData = preview.assignments[roleName];
+                const grouped = roleData?.grouped || {};
                 return (
-                  <div key={role.name} className="border rounded-lg p-3">
-                    <h3 className="font-semibold mb-2">{role.name}</h3>
+                  <div key={roleName} className="border rounded-lg p-3">
+                    <h3 className="font-semibold mb-2">{roleName}</h3>
                     <table className="min-w-full text-sm border">
                       <thead className="bg-muted">
                         <tr>

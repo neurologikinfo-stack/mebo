@@ -20,7 +20,7 @@ export default function UsersPage() {
       const result = await res.json();
 
       if (res.ok && result.ok) {
-        setUsers(result.data); // ✅ ahora usamos "data"
+        setUsers(result.data);
       } else {
         console.error("❌ Error cargando usuarios:", result.error);
       }
@@ -63,6 +63,9 @@ export default function UsersPage() {
           <thead className="bg-muted">
             <tr>
               <th className="px-6 py-3 text-left font-semibold text-muted-foreground">
+                Avatar
+              </th>
+              <th className="px-6 py-3 text-left font-semibold text-muted-foreground">
                 Email
               </th>
               <th className="px-6 py-3 text-left font-semibold text-muted-foreground">
@@ -85,6 +88,25 @@ export default function UsersPage() {
                   router.push(`/dashboard/admin/users/${u.clerk_id}`)
                 }
               >
+                {/* Avatar */}
+                <td className="px-6 py-4">
+                  {u.avatar_url ? (
+                    <img
+                      src={u.avatar_url}
+                      alt={u.full_name || u.email}
+                      className="h-10 w-10 rounded-full object-cover border border-border"
+                    />
+                  ) : (
+                    <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center text-muted-foreground font-medium">
+                      {(
+                        u.full_name?.charAt(0) ||
+                        u.email?.charAt(0) ||
+                        "?"
+                      ).toUpperCase()}
+                    </div>
+                  )}
+                </td>
+
                 <td className="px-6 py-4">{u.email}</td>
                 <td className="px-6 py-4 text-muted-foreground">
                   {u.full_name || "—"}
@@ -106,7 +128,7 @@ export default function UsersPage() {
                   </span>
                 </td>
 
-                {/* ✅ DropdownMenu en lugar de <select> */}
+                {/* Dropdown acciones */}
                 <td
                   className="px-6 py-4"
                   onClick={(e) => e.stopPropagation()} // evita navegación desde esta celda

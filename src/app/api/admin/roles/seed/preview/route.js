@@ -17,51 +17,68 @@ export async function GET() {
 
     if (permError) throw permError;
 
+    // Helper para agrupar permisos por recurso
+    function groupByResource(perms) {
+      return perms.reduce((acc, perm) => {
+        const [resource, action] = perm.split(".");
+        if (!acc[resource]) acc[resource] = {};
+        acc[resource][action] = true;
+        return acc;
+      }, {});
+    }
+
     // 🔹 Roles base
     const roles = ["admin", "owner", "staff", "customer"];
-    const assignments = [];
+    const assignments = {};
 
     // Admin → todos los permisos
-    assignments.push({
-      name: "admin",
-      permissions: allPermissions.map((p) => p.name),
-    });
+    const adminPerms = allPermissions.map((p) => p.name);
+    assignments.admin = {
+      flat: adminPerms,
+      grouped: groupByResource(adminPerms),
+    };
 
     // Owner
-    assignments.push({
-      name: "owner",
-      permissions: [
-        "businesses.view",
-        "businesses.edit",
-        "owners.view",
-        "owners.edit",
-        "reports.view",
-      ].filter((p) => allPermissions.some((ap) => ap.name === p)),
-    });
+    const ownerPerms = [
+      "businesses.view",
+      "businesses.edit",
+      "owners.view",
+      "owners.edit",
+      "reports.view",
+    ].filter((p) => allPermissions.some((ap) => ap.name === p));
+    assignments.owner = {
+      flat: ownerPerms,
+      grouped: groupByResource(ownerPerms),
+    };
 
     // Staff
-    assignments.push({
-      name: "staff",
-      permissions: [
-        "businesses.create",
-        "businesses.view",
-        "owners.view",
-        "reports.view",
-      ].filter((p) => allPermissions.some((ap) => ap.name === p)),
-    });
+    const staffPerms = [
+      "businesses.create",
+      "businesses.view",
+      "owners.view",
+      "reports.view",
+    ].filter((p) => allPermissions.some((ap) => ap.name === p));
+    assignments.staff = {
+      flat: staffPerms,
+      grouped: groupByResource(staffPerms),
+    };
 
     // Customer
-    assignments.push({
-      name: "customer",
-      permissions: ["businesses.view", "owners.view"].filter((p) =>
-        allPermissions.some((ap) => ap.name === p)
-      ),
-    });
+    const customerPerms = ["businesses.view", "owners.view"].filter((p) =>
+      allPermissions.some((ap) => ap.name === p)
+    );
+    assignments.customer = {
+      flat: customerPerms,
+      grouped: groupByResource(customerPerms),
+    };
 
     return NextResponse.json({
       ok: true,
-      message: "Vista previa de asignaciones de roles",
-      data: assignments, // ✅ array [{name, permissions}]
+      message: "Vista previa de asignaciones de roles (agrupadas)",
+      data: {
+        roles,
+        assignments,
+      },
     });
   } catch (err) {
     console.error("❌ Error en preview seed roles:", err);
