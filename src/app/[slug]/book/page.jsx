@@ -2,12 +2,14 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { useUser } from "@clerk/nextjs"; // 👈 importamos Clerk
+import { useUser } from "@clerk/nextjs";
 import { supabase } from "@/utils/supabase/client";
+import { CalendarDays, CheckCircle, XCircle } from "lucide-react";
+import SlotsCalendar from "@/components/SlotsCalendar"; // 👈 calendario pro
 
 export default function BookPage() {
   const { slug } = useParams();
-  const { user } = useUser(); // 👈 usuario de Clerk
+  const { user } = useUser();
 
   const [biz, setBiz] = useState(null);
   const [services, setServices] = useState([]);
@@ -20,14 +22,13 @@ export default function BookPage() {
   const [booking, setBooking] = useState(false);
   const [message, setMessage] = useState(null);
 
-  // datos del cliente (relleno manual si no hay Clerk)
   const [customer, setCustomer] = useState({
     name: "",
     phone: "",
     email: "",
   });
 
-  // cargar negocio, servicios y staff
+  // 🔹 Cargar negocio, servicios y staff
   useEffect(() => {
     if (!slug) return;
     (async () => {
@@ -80,7 +81,7 @@ export default function BookPage() {
 
     let c = null;
 
-    // 👇 Buscar cliente existente por Clerk ID o email
+    // 🔹 Buscar cliente existente
     const { data: existing } = await supabase
       .from("customers")
       .select("id")
@@ -95,7 +96,6 @@ export default function BookPage() {
     if (existing) {
       c = existing;
     } else {
-      // 👇 Crear customer nuevo vinculado con Clerk
       const { data: created, error: ce } = await supabase
         .from("customers")
         .insert({
@@ -116,7 +116,6 @@ export default function BookPage() {
       c = created;
     }
 
-    // 👇 Insertar cita
     const { error: apptErr } = await supabase.from("appointments").insert({
       business_id: biz.id,
       staff_id: staffId,
@@ -140,25 +139,37 @@ export default function BookPage() {
   if (!biz) return <div className="p-6">Cargando negocio…</div>;
 
   return (
-    <div className="mx-auto max-w-2xl p-6 space-y-6">
-      <h1 className="text-2xl font-semibold">{biz.name}</h1>
+    <div className="mx-auto max-w-4xl p-6 space-y-6">
+      {/* Encabezado */}
+      <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+        Reserva en {biz.name}
+      </h1>
+      <p className="text-gray-600 dark:text-gray-300">
+        Completa los pasos para agendar tu cita
+      </p>
 
+      {/* Mensajes */}
       {message && (
         <div
-          className={`p-3 rounded text-sm ${
+          className={`flex items-center gap-2 p-4 rounded-lg text-sm font-medium ${
             message.type === "success"
               ? "bg-green-100 text-green-800"
               : "bg-red-100 text-red-800"
           }`}
         >
+          {message.type === "success" ? (
+            <CheckCircle className="h-5 w-5" />
+          ) : (
+            <XCircle className="h-5 w-5" />
+          )}
           {message.text}
         </div>
       )}
 
       {/* Selecciones */}
-      <div className="grid gap-3">
+      <div className="grid gap-4 md:grid-cols-2">
         <select
-          className="border p-2 rounded"
+          className="border p-3 rounded-lg"
           value={serviceId}
           onChange={(e) => setServiceId(e.target.value)}
         >
@@ -171,7 +182,7 @@ export default function BookPage() {
         </select>
 
         <select
-          className="border p-2 rounded"
+          className="border p-3 rounded-lg"
           value={staffId}
           onChange={(e) => setStaffId(e.target.value)}
         >
@@ -184,75 +195,69 @@ export default function BookPage() {
         </select>
 
         <input
-          className="border p-2 rounded"
+          className="border p-3 rounded-lg md:col-span-2"
           type="date"
           value={date}
           onChange={(e) => setDate(e.target.value)}
         />
 
         <button
-          className="bg-black text-white rounded p-2 disabled:opacity-50 hover:bg-gray-800 transition"
+          className="bg-blue-600 text-white rounded-lg p-3 font-medium flex items-center justify-center gap-2 hover:bg-blue-500 transition md:col-span-2"
           onClick={fetchSlots}
           disabled={loadingSlots}
         >
-          {loadingSlots ? "Cargando..." : "Ver horarios"}
+          <CalendarDays className="h-5 w-5" />
+          {loadingSlots ? "Cargando horarios..." : "Ver horarios disponibles"}
         </button>
       </div>
 
-      {/* Formulario cliente */}
-      <div className="p-4 border rounded bg-gray-50 space-y-3">
-        <h2 className="text-lg font-medium text-gray-700">Tus datos</h2>
+      {/* Datos del cliente */}
+      <div className="p-4 border rounded-lg bg-gray-50 dark:bg-gray-800 space-y-3">
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+          Tus datos
+        </h2>
         <input
           type="text"
           placeholder="Nombre completo"
-          className="w-full border rounded p-2"
+          className="w-full border rounded-lg p-3"
           value={customer.name}
           onChange={(e) => setCustomer({ ...customer, name: e.target.value })}
         />
         <input
           type="tel"
           placeholder="Teléfono (opcional)"
-          className="w-full border rounded p-2"
+          className="w-full border rounded-lg p-3"
           value={customer.phone}
           onChange={(e) => setCustomer({ ...customer, phone: e.target.value })}
         />
         <input
           type="email"
           placeholder="Email (opcional)"
-          className="w-full border rounded p-2"
+          className="w-full border rounded-lg p-3"
           value={customer.email}
           onChange={(e) => setCustomer({ ...customer, email: e.target.value })}
         />
       </div>
 
-      {/* Slots disponibles */}
+      {/* Calendario de slots */}
       <div>
-        <h2 className="text-lg font-medium mb-2">Horarios disponibles</h2>
-        <div className="grid grid-cols-2 gap-2">
-          {slots.map((s, i) => (
-            <button
-              key={i}
-              disabled={booking}
-              className="border rounded p-2 hover:bg-blue-100 disabled:opacity-50"
-              onClick={() => book(s)}
-            >
-              {new Date(s.slot_start).toLocaleTimeString([], {
-                hour: "2-digit",
-                minute: "2-digit",
-              })}{" "}
-              –{" "}
-              {new Date(s.slot_end).toLocaleTimeString([], {
-                hour: "2-digit",
-                minute: "2-digit",
-              })}
-            </button>
-          ))}
-          {slots.length === 0 && !loadingSlots && (
+        <h2 className="text-lg font-semibold mb-3 text-gray-900 dark:text-white">
+          Horarios disponibles
+        </h2>
+        {slots.length > 0 ? (
+          <SlotsCalendar
+            slots={slots}
+            onSelect={(event) =>
+              book({ slot_start: event.start, slot_end: event.end })
+            }
+          />
+        ) : (
+          !loadingSlots && (
             <p className="text-sm text-gray-500">
               No hay horarios para esa fecha.
             </p>
-          )}
-        </div>
+          )
+        )}
       </div>
     </div>
   );
