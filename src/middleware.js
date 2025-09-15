@@ -6,6 +6,7 @@ export const config = {
   matcher: [
     "/dashboard/:path*",
     "/admin/:path*",
-    "/api/(.*)", // si quieres proteger APIs privadas
+    "/book/:path*", // 👈 protege /book y subrutas
+    "/api/(.*)", // protege APIs privadas
   ],
 };
