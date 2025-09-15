@@ -10,7 +10,7 @@ export default function EditBusinessForm({ business, owners }) {
       <h1 className="text-2xl font-bold">Editar negocio</h1>
 
       {/* Usa la server action directamente */}
-      <form action={(formData) => updateBusinessWithLogo(business, formData)} className="space-y-3">
+      <form action={updateBusinessWithLogo.bind(null, business)} className="space-y-3">
         <Field name="name" label="Nombre" defaultValue={business.name} required />
         <Field name="slug" label="Slug" defaultValue={business.slug} required />
         <Field name="phone" label="Teléfono" defaultValue={business.phone || ''} />
