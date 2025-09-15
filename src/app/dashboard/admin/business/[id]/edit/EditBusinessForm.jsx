@@ -10,7 +10,7 @@ export default function EditBusinessForm({ business, owners }) {
       <h1 className="text-2xl font-bold">Editar negocio</h1>
 
       {/* Usa la server action directamente */}
-      <form action={(formData) => updateAction(business, formData)} className="space-y-3">
+      <form action={(formData) => updateBusinessWithLogo(business, formData)} className="space-y-3">
         <Field name="name" label="Nombre" defaultValue={business.name} required />
         <Field name="slug" label="Slug" defaultValue={business.slug} required />
         <Field name="phone" label="Teléfono" defaultValue={business.phone || ''} />
@@ -41,7 +41,7 @@ export default function EditBusinessForm({ business, owners }) {
         />
 
         {/* Campo logo con preview */}
-        <LogoUploader currentLogo={business.logo_url} />
+        <LogoUploader currentLogo={business.logo_url || '/default-business.png'} />
 
         <div className="flex gap-2">
           <button className="rounded bg-black px-4 py-2 text-white">Guardar</button>

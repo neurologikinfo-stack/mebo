@@ -1,9 +1,14 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
 export default function LogoUploader({ currentLogo }) {
-  const [preview, setPreview] = useState(currentLogo)
+  const [preview, setPreview] = useState(currentLogo || '/default-business.png')
+
+  // 🔹 Si currentLogo cambia (ej. al cargar negocio), actualizamos preview
+  useEffect(() => {
+    setPreview(currentLogo || '/default-business.png')
+  }, [currentLogo])
 
   function handleChange(e) {
     const file = e.target.files?.[0]

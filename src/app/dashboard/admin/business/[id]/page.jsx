@@ -23,14 +23,12 @@ export default async function BusinessDetailPage({ params }) {
     <main className="mx-auto max-w-xl p-6 space-y-4">
       <h1 className="text-2xl font-bold">{business.name}</h1>
 
-      {/* Logo */}
-      {business.logo_url && (
-        <img
-          src={business.logo_url}
-          alt={`Logo de ${business.name}`}
-          className="w-24 h-24 object-contain mb-4 border rounded"
-        />
-      )}
+      {/* Logo con fallback */}
+      <img
+        src={business.logo_url || '/default-business.png'}
+        alt={`Logo de ${business.name}`}
+        className="w-24 h-24 object-contain mb-4 border rounded"
+      />
 
       <p className="text-gray-600">Slug: {business.slug}</p>
       <p className="text-gray-600">Teléfono: {business.phone || 'N/A'}</p>
