@@ -77,3 +77,57 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* ======================= */
+/* 📅 Estilos para DayPicker */
+/* ======================= */
+
+:where(.rdp) {
+  width: 100% !important;
+  max-width: none !important;
+  display: block !important;
+  padding: 1rem !important;
+  font-size: 1.1rem !important;
+}
+
+:where(.rdp-months) {
+  display: block !important;
+  width: 100% !important;
+}
+
+:where(.rdp-month) {
+  width: 100% !important;
+}
+
+:where(.rdp-table) {
+  width: 100% !important;
+  table-layout: fixed !important; /* columnas iguales */
+  border-collapse: separate !important;
+  border-spacing: 0.5rem !important;
+  text-align: center !important;
+}
+
+:where(.rdp-cell) {
+  width: 14.28% !important; /* 7 columnas exactas */
+  height: 3.5rem !important; /* 👈 más alto = cuadrícula */
+  text-align: center !important;
+  border-radius: 0.5rem !important;
+  cursor: pointer !important;
+}
+
+:where(.rdp-cell:hover) {
+  background-color: hsl(var(--accent)) !important;
+  color: hsl(var(--accent-foreground)) !important;
+}
+
+:where(.rdp-day_selected) {
+  background-color: hsl(var(--primary)) !important;
+  color: hsl(var(--primary-foreground)) !important;
+  border-radius: 0.5rem !important;
+}
+
+:where(.rdp-day_today) {
+  font-weight: bold !important;
+  border: 1px solid hsl(var(--ring)) !important;
+  border-radius: 0.5rem !important;
+}

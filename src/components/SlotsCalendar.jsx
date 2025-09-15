@@ -21,20 +21,20 @@ export default function SlotsCalendar({ slots, onSelect }) {
     start: new Date(s.slot_start),
     end: new Date(s.slot_end),
     title: s.status === "booked" ? "Ocupado" : "Disponible",
-    status: s.status || "available", // 👈 por si viene de Supabase con campo status
+    status: s.status || "available",
     allDay: false,
   }));
 
   return (
-    <div className="h-[600px] bg-white dark:bg-gray-900 rounded-xl shadow border p-3">
+    <div className="h-[700px] w-full bg-white dark:bg-gray-900 rounded-xl shadow border p-6">
       <Calendar
         localizer={localizer}
         events={events}
         startAccessor="start"
         endAccessor="end"
-        defaultView="day"
+        defaultView="week" // 👈 ahora la vista por defecto es semanal
         views={["day", "week"]}
-        style={{ height: "100%" }}
+        style={{ height: "100%", width: "100%" }}
         selectable
         onSelectEvent={(event) => {
           if (event.status !== "booked") {
@@ -59,10 +59,10 @@ export default function SlotsCalendar({ slots, onSelect }) {
             style: {
               backgroundColor: bg,
               color: "white",
-              borderRadius: "6px",
+              borderRadius: "8px",
               border: "none",
-              padding: "2px 6px",
-              fontSize: "0.85rem",
+              padding: "4px 8px",
+              fontSize: "0.9rem",
               cursor: event.status === "booked" ? "not-allowed" : "pointer",
               opacity: event.status === "booked" ? 0.6 : 1,
             },
