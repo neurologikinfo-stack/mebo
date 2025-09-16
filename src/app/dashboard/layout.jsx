@@ -1,4 +1,4 @@
-"use client";
+'use client'
 
 export default function DashboardLayout({ children }) {
   return (
@@ -6,5 +6,5 @@ export default function DashboardLayout({ children }) {
       {/* 🔹 eliminamos max-w-7xl y mx-auto */}
       <main className="flex-1 w-full p-6">{children}</main>
     </div>
-  );
+  )
 }

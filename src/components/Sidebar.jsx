@@ -1,112 +1,129 @@
-"use client";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { LayoutDashboard, Settings, User, X } from "lucide-react";
+'use client'
+import Link from 'next/link'
+import { usePathname } from 'next/navigation'
+import { useState } from 'react'
+import { ChevronLeft, ChevronRight, LayoutDashboard } from 'lucide-react'
+import { useSidebarColor } from '@/context/SidebarColorContext'
 
-export default function Sidebar({
-  basePath,
-  collapsed,
-  toggleCollapsed,
-  menuItems,
-}) {
-  const pathname = usePathname();
+// 🔹 Colores predefinidos
+const presetColors = {
+  'preset:azul': { bg: '#2563eb', text: 'white' },
+  'preset:rojo': { bg: '#dc2626', text: 'white' },
+  'preset:amarillo': { bg: '#facc15', text: 'black' },
+  'preset:verde': { bg: '#16a34a', text: 'white' },
+  'preset:naranja': { bg: '#f97316', text: 'white' },
+  'preset:gris': { bg: '#1f2937', text: 'white' },
+  'preset:cian': { bg: '#06b6d4', text: 'black' },
+  'preset:purpura': { bg: '#9333ea', text: 'white' },
+  'preset:rosa': { bg: '#db2777', text: 'white' },
+  'preset:negro': { bg: '#000000', text: 'white' },
 
-  // Agregamos Profile y Settings por defecto
-  const defaultItems = [
-    { name: "Perfil", href: `${basePath}/profile`, icon: User },
-    { name: "Configuración", href: `${basePath}/settings`, icon: Settings },
-  ];
+  // 🔹 Especiales (respetan dark mode con clases)
+  'preset:blanco': { className: 'bg-white text-black dark:bg-gray-900 dark:text-white' },
+  'preset:oscuro': { className: 'bg-gray-900 text-white dark:bg-white dark:text-black' },
+}
 
-  const items = [...menuItems, ...defaultItems];
+// 🔹 Función para calcular contraste automático (para hex personalizados)
+function getContrastYIQ(hexcolor) {
+  if (!hexcolor) return 'white'
+  let c = hexcolor.replace('#', '')
+  if (c.length === 3) {
+    c = c
+      .split('')
+      .map((ch) => ch + ch)
+      .join('')
+  }
+  const r = parseInt(c.substr(0, 2), 16)
+  const g = parseInt(c.substr(2, 2), 16)
+  const b = parseInt(c.substr(4, 2), 16)
+  const yiq = (r * 299 + g * 587 + b * 114) / 1000
+  return yiq >= 128 ? 'black' : 'white'
+}
+
+export default function DashboardLayout({ title, menuItems = [], children }) {
+  const pathname = usePathname()
+  const [collapsed, setCollapsed] = useState(false)
+  const { color } = useSidebarColor() // Ej: "preset:azul", "preset:blanco", "#ad1485"
+
+  // 🔹 Determinar estilos
+  let bgColor,
+    textColor,
+    extraClass = ''
+
+  if (presetColors[color]) {
+    if (presetColors[color].bg) {
+      bgColor = presetColors[color].bg
+      textColor = presetColors[color].text
+    }
+    if (presetColors[color].className) {
+      extraClass = presetColors[color].className
+    }
+  } else if (color?.startsWith('#')) {
+    bgColor = color
+    textColor = getContrastYIQ(color)
+  } else {
+    // fallback gris oscuro
+    bgColor = '#1f2937'
+    textColor = 'white'
+  }
 
   return (
-    <>
-      {/* Desktop Sidebar */}
+    <div className="flex min-h-screen bg-background text-foreground">
+      {/* Sidebar */}
       <aside
-        className={`hidden md:flex flex-col fixed inset-y-0 left-0 transition-all duration-300
-        ${collapsed ? "w-20" : "w-64"}
-        bg-card text-card-foreground border-r border-border shadow-sm z-30`}
+        className={`${
+          collapsed ? 'w-20' : 'w-64'
+        } h-screen fixed left-0 top-0 shadow-sm transition-all duration-300 ${extraClass}`}
+        style={{
+          backgroundColor: extraClass ? undefined : bgColor,
+          color: extraClass ? undefined : textColor,
+        }}
       >
         <div className="flex items-center justify-between p-4 border-b border-border">
-          {!collapsed && <h2 className="text-lg font-bold">Panel</h2>}
+          {!collapsed && <h2 className="text-lg font-bold">{title}</h2>}
           <button
-            className="p-2 rounded hover:bg-muted"
-            onClick={toggleCollapsed}
+            className="p-2 rounded"
+            style={extraClass ? {} : { color: textColor }}
+            onClick={() => setCollapsed(!collapsed)}
           >
-            {collapsed ? "➡️" : "⬅️"}
+            {collapsed ? <ChevronRight className="h-5 w-5" /> : <ChevronLeft className="h-5 w-5" />}
           </button>
         </div>
 
-        <nav className="px-2 py-4 space-y-1">
-          {items.map((item) => {
-            const active = pathname === item.href;
-            const Icon = item.icon || LayoutDashboard;
+        <nav className="py-4 space-y-1">
+          {menuItems.map((item) => {
+            const active = pathname === item.href
+            const Icon = item.icon || LayoutDashboard
             return (
               <Link
                 key={item.href}
                 href={item.href}
-                className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition
-                  ${
-                    active
-                      ? "bg-primary text-primary-foreground shadow"
-                      : "text-muted-foreground hover:bg-muted"
-                  }`}
+                className={`flex items-center gap-3 rounded-md py-2 pl-4 pr-2 text-sm font-medium ${
+                  active ? 'bg-black/10 dark:bg-white/10' : ''
+                }`}
+                style={extraClass ? {} : { color: textColor }}
               >
                 <Icon className="h-5 w-5 flex-shrink-0" />
                 {!collapsed && <span>{item.name}</span>}
               </Link>
-            );
+            )
           })}
         </nav>
       </aside>
 
-      {/* Mobile Sidebar Overlay */}
+      {/* Contenido */}
       <div
-        className={`md:hidden fixed inset-0 z-40 bg-black/50 transition-opacity ${
-          collapsed ? "opacity-0 pointer-events-none" : "opacity-100"
-        }`}
-        onClick={toggleCollapsed}
+        className="flex flex-col flex-1 transition-all duration-300"
+        style={{ marginLeft: collapsed ? 80 : 256 }}
       >
-        <aside
-          className={`absolute top-0 left-0 h-full w-64 bg-card text-card-foreground shadow-lg p-4 transition-transform duration-300 ${
-            collapsed ? "-translate-x-full" : "translate-x-0"
-          }`}
-          onClick={(e) => e.stopPropagation()}
-        >
-          <div className="flex items-center justify-between mb-6 border-b border-border pb-2">
-            <h2 className="text-lg font-bold">Panel</h2>
-            <button
-              className="p-2 rounded hover:bg-muted"
-              onClick={toggleCollapsed}
-            >
-              <X className="h-5 w-5" />
-            </button>
+        <header className="sticky top-0 z-20 w-full bg-card border-b border-border shadow-sm">
+          <div className="flex items-center justify-between px-4 py-3">
+            <h1 className="text-lg font-semibold">{title}</h1>
           </div>
+        </header>
 
-          <nav className="space-y-1">
-            {items.map((item) => {
-              const active = pathname === item.href;
-              const Icon = item.icon || LayoutDashboard;
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  onClick={toggleCollapsed}
-                  className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition
-                    ${
-                      active
-                        ? "bg-primary text-primary-foreground shadow"
-                        : "text-muted-foreground hover:bg-muted"
-                    }`}
-                >
-                  <Icon className="h-5 w-5 flex-shrink-0" />
-                  <span>{item.name}</span>
-                </Link>
-              );
-            })}
-          </nav>
-        </aside>
+        <main className="flex-1 p-6">{children}</main>
       </div>
-    </>
-  );
+    </div>
+  )
 }

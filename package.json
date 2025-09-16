@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "preview": "npm run build && npm run start"
+    "preview": "npm run build && npm run start",
+    "seed:settings": "node seed-settings.js"
   },
   "dependencies": {
     "@clerk/clerk-sdk-node": "^5.1.6",

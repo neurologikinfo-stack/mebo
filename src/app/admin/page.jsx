@@ -1,23 +1,17 @@
-"use client";
-import { useState } from "react";
-import Sidebar from "@/components/Sidebar";
-import {
-  Menu,
-  Users,
-  Briefcase,
-  BarChart3,
-  LayoutDashboard,
-} from "lucide-react";
+'use client'
+import { useState } from 'react'
+import Sidebar from '@/components/Sidebar'
+import { Menu, Users, Briefcase, BarChart3, LayoutDashboard } from 'lucide-react'
 
 const adminItems = [
-  { name: "Dashboard", href: "/dashboard/admin", icon: LayoutDashboard },
-  { name: "Usuarios", href: "/dashboard/admin/users", icon: Users },
-  { name: "Negocios", href: "/dashboard/admin/business", icon: Briefcase },
-  { name: "Reportes", href: "/dashboard/admin/reports", icon: BarChart3 },
-];
+  { name: 'Dashboard', href: '/dashboard/admin', icon: LayoutDashboard },
+  { name: 'Usuarios', href: '/dashboard/admin/users', icon: Users },
+  { name: 'Negocios', href: '/dashboard/admin/business', icon: Briefcase },
+  { name: 'Reportes', href: '/dashboard/admin/reports', icon: BarChart3 },
+]
 
 export default function AdminLayout({ children }) {
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(false)
 
   return (
     <div className="flex min-h-screen bg-gray-50 dark:bg-gray-950">
@@ -47,5 +41,5 @@ export default function AdminLayout({ children }) {
         <main className="flex-1 p-6">{children}</main>
       </div>
     </div>
-  );
+  )
 }

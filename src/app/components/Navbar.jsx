@@ -35,10 +35,24 @@ export default function Navbar() {
       ? 'Dashboard'
       : 'Dashboard'
 
-  const isActive = (href) =>
-    pathname.startsWith(href)
-      ? 'text-black dark:text-white font-semibold'
-      : 'text-gray-600 dark:text-gray-300 hover:text-black dark:hover:text-white'
+  // 🔹 Detectar si el primary es blanco
+  const isPrimaryWhite = () => {
+    if (typeof window === 'undefined') return false
+    const rgb = getComputedStyle(document.documentElement).getPropertyValue('--primary').trim()
+    return rgb === '255 255 255'
+  }
+
+  // 🔹 Función para marcar activo
+  const isActive = (href) => {
+    const activeClass = isPrimaryWhite() ? 'text-black font-semibold' : 'text-primary font-semibold'
+
+    if (href === '/') {
+      return pathname === '/' ? activeClass : 'text-gray-600 dark:text-gray-300 hover:text-primary'
+    }
+    return pathname.startsWith(href)
+      ? activeClass
+      : 'text-gray-600 dark:text-gray-300 hover:text-primary'
+  }
 
   // Dark mode inicial
   useEffect(() => {
@@ -108,12 +122,12 @@ export default function Navbar() {
 
           <SignedOut>
             <SignInButton mode="modal">
-              <span className="rounded-lg border px-3 py-1.5 text-sm hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer">
+              <span className="rounded-lg border px-3 py-1.5 text-sm hover:bg-muted cursor-pointer">
                 Ingresar
               </span>
             </SignInButton>
             <SignUpButton mode="modal">
-              <span className="rounded-lg bg-black px-3 py-1.5 text-sm text-white hover:bg-black/90 cursor-pointer">
+              <span className="rounded-lg bg-primary px-3 py-1.5 text-sm text-primary-foreground hover:opacity-90 cursor-pointer">
                 Crear cuenta
               </span>
             </SignUpButton>
@@ -123,7 +137,7 @@ export default function Navbar() {
             {role === 'admin' && (
               <Link
                 href="/dashboard/admin/business/new"
-                className="rounded-lg bg-black px-3 py-1.5 text-sm text-white hover:bg-black/90"
+                className="rounded-lg bg-primary px-3 py-1.5 text-sm text-primary-foreground hover:opacity-90"
               >
                 + Nuevo negocio
               </Link>
@@ -168,12 +182,12 @@ export default function Navbar() {
 
             <SignedOut>
               <SignInButton mode="modal">
-                <span className="rounded-lg border px-3 py-1.5 text-sm hover:bg-gray-50 dark:hover:bg-gray-800 w-full text-left cursor-pointer">
+                <span className="rounded-lg border px-3 py-1.5 text-sm hover:bg-muted w-full text-left cursor-pointer">
                   Ingresar
                 </span>
               </SignInButton>
               <SignUpButton mode="modal">
-                <span className="rounded-lg bg-black px-3 py-1.5 text-sm text-white hover:bg-black/90 w-full text-left cursor-pointer">
+                <span className="rounded-lg bg-primary px-3 py-1.5 text-sm text-primary-foreground hover:opacity-90 w-full text-left cursor-pointer">
                   Crear cuenta
                 </span>
               </SignUpButton>
@@ -183,7 +197,7 @@ export default function Navbar() {
               {role === 'admin' && (
                 <Link
                   href="/dashboard/admin/business/new"
-                  className="rounded-lg bg-black px-3 py-1.5 text-sm text-white hover:bg-black/90"
+                  className="rounded-lg bg-primary px-3 py-1.5 text-sm text-primary-foreground hover:opacity-90"
                 >
                   + Nuevo negocio
                 </Link>

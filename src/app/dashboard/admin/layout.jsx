@@ -1,21 +1,37 @@
-import AdminSidebar from '@/components/admin/AdminSidebar'
+'use client'
+
+import DashboardLayout from '@/components/Sidebar'
+import { SidebarColorProvider } from '@/context/SidebarColorContext'
+import {
+  LayoutDashboard,
+  Users,
+  Briefcase,
+  BarChart3,
+  Shield,
+  UserCog,
+  LockKeyhole,
+  Settings,
+  User,
+} from 'lucide-react'
+
+const adminMenu = [
+  { name: 'Dashboard', href: '/dashboard/admin', icon: LayoutDashboard },
+  { name: 'Usuarios', href: '/dashboard/admin/users', icon: Users },
+  { name: 'Roles', href: '/dashboard/admin/roles', icon: LockKeyhole },
+  { name: 'Negocios', href: '/dashboard/admin/business', icon: Briefcase },
+  { name: 'Owners', href: '/dashboard/admin/owners', icon: UserCog },
+  { name: 'Permisos', href: '/dashboard/admin/permissions', icon: Shield },
+  { name: 'Reportes', href: '/dashboard/admin/reports', icon: BarChart3 },
+  { name: 'Perfil', href: '/dashboard/admin/profile', icon: User },
+  { name: 'Configuración', href: '/dashboard/admin/settings', icon: Settings },
+]
 
 export default function AdminLayout({ children }) {
   return (
-    <div className="flex min-h-screen bg-background text-foreground">
-      {/* Sidebar responsive (móvil + desktop) */}
-      <AdminSidebar />
-
-      {/* Contenido principal */}
-      <div className="flex flex-col flex-1">
-        <header className="sticky top-0 z-20 w-full bg-card border-b border-border shadow-sm">
-          <div className="flex items-center justify-between px-4 py-3">
-            <h1 className="text-lg font-semibold">Dashboard Admin</h1>
-          </div>
-        </header>
-
-        <main className="flex-1 px-4 sm:px-6 lg:px-8 py-6">{children}</main>
-      </div>
-    </div>
+    <SidebarColorProvider role="admin">
+      <DashboardLayout title="Panel Admin" menuItems={adminMenu}>
+        {children}
+      </DashboardLayout>
+    </SidebarColorProvider>
   )
 }
