@@ -1,100 +1,92 @@
-"use client";
+'use client'
 
-import Link from "next/link";
-import { usePathname } from "next/navigation";
-import {
-  SignedIn,
-  SignedOut,
-  SignInButton,
-  SignUpButton,
-  UserButton,
-  useUser,
-} from "@clerk/nextjs";
-import { useState, useEffect } from "react";
-import { Menu, X, Sun, Moon } from "lucide-react";
+import Link from 'next/link'
+import { usePathname } from 'next/navigation'
+import { SignedIn, SignedOut, SignInButton, SignUpButton, UserButton, useUser } from '@clerk/nextjs'
+import { useState, useEffect } from 'react'
+import { Menu, X, Sun, Moon } from 'lucide-react'
 
 export default function Navbar() {
-  const pathname = usePathname();
-  const { user } = useUser();
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [darkMode, setDarkMode] = useState(false);
+  const pathname = usePathname()
+  const { user } = useUser()
+  const [menuOpen, setMenuOpen] = useState(false)
+  const [darkMode, setDarkMode] = useState(false)
 
   // Rol actual (default customer)
-  const role = (user?.publicMetadata?.role || "customer").toLowerCase();
+  const role = (user?.publicMetadata?.role || 'customer').toLowerCase()
+  const isAdminOrOwner = role === 'admin' || role === 'owner'
 
   // 🔹 Rutas dinámicas de dashboard
   const dashboardRoutes = {
-    customer: "/dashboard/customer",
-    owner: "/dashboard/owner",
-    admin: "/dashboard/admin",
-  };
+    customer: '/dashboard/customer',
+    owner: '/dashboard/owner',
+    admin: '/dashboard/admin',
+  }
 
-  const dashboardPath = dashboardRoutes[role] || "/dashboard";
+  const dashboardPath = dashboardRoutes[role] || '/dashboard'
 
   // Texto dinámico del link de dashboard
   const dashboardLabel =
-    role === "customer"
-      ? "Mis citas"
-      : role === "owner"
-      ? "Panel de negocios"
-      : role === "admin"
-      ? "Dashboard"
-      : "Dashboard";
+    role === 'customer'
+      ? 'Mis citas'
+      : role === 'owner'
+      ? 'Panel de negocios'
+      : role === 'admin'
+      ? 'Dashboard'
+      : 'Dashboard'
 
   const isActive = (href) =>
     pathname.startsWith(href)
-      ? "text-black dark:text-white font-semibold"
-      : "text-gray-600 dark:text-gray-300 hover:text-black dark:hover:text-white";
+      ? 'text-black dark:text-white font-semibold'
+      : 'text-gray-600 dark:text-gray-300 hover:text-black dark:hover:text-white'
 
   // Dark mode inicial
   useEffect(() => {
     if (
-      localStorage.theme === "dark" ||
-      (!("theme" in localStorage) &&
-        window.matchMedia("(prefers-color-scheme: dark)").matches)
+      localStorage.theme === 'dark' ||
+      (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)
     ) {
-      document.documentElement.classList.add("dark");
-      setDarkMode(true);
+      document.documentElement.classList.add('dark')
+      setDarkMode(true)
     } else {
-      document.documentElement.classList.remove("dark");
-      setDarkMode(false);
+      document.documentElement.classList.remove('dark')
+      setDarkMode(false)
     }
-  }, []);
+  }, [])
 
   // Toggle dark mode
   const toggleDarkMode = () => {
     if (darkMode) {
-      document.documentElement.classList.remove("dark");
-      localStorage.theme = "light";
-      setDarkMode(false);
+      document.documentElement.classList.remove('dark')
+      localStorage.theme = 'light'
+      setDarkMode(false)
     } else {
-      document.documentElement.classList.add("dark");
-      localStorage.theme = "dark";
-      setDarkMode(true);
+      document.documentElement.classList.add('dark')
+      localStorage.theme = 'dark'
+      setDarkMode(true)
     }
-  };
+  }
 
   return (
     <header className="border-b bg-white dark:bg-gray-900">
       <nav className="mx-auto flex max-w-6xl items-center justify-between p-4">
         {/* Brand */}
-        <Link
-          href="/"
-          className="text-lg font-bold text-gray-900 dark:text-white"
-        >
+        <Link href="/" className="text-lg font-bold text-gray-900 dark:text-white">
           mebo
         </Link>
 
         {/* Desktop links */}
         <div className="hidden md:flex items-center gap-6">
-          <Link href="/" className={`text-sm ${isActive("/")}`}>
-            Inicio
+          {isAdminOrOwner && (
+            <Link href="/" className={`text-sm ${isActive('/')}`}>
+              Inicio
+            </Link>
+          )}
+          <Link href="/businesses" className={`text-sm ${isActive('/businesses')}`}>
+            Negocios
           </Link>
           <SignedIn>
-            <Link
-              href={dashboardPath}
-              className={`text-sm ${isActive(dashboardPath)}`}
-            >
+            <Link href={dashboardPath} className={`text-sm ${isActive(dashboardPath)}`}>
               {dashboardLabel}
             </Link>
           </SignedIn>
@@ -120,17 +112,15 @@ export default function Navbar() {
                 Ingresar
               </span>
             </SignInButton>
+            <SignUpButton mode="modal">
+              <span className="rounded-lg bg-black px-3 py-1.5 text-sm text-white hover:bg-black/90 cursor-pointer">
+                Crear cuenta
+              </span>
+            </SignUpButton>
           </SignedOut>
 
           <SignedIn>
-            <Link
-              href="/book"
-              className="rounded-lg bg-blue-600 px-3 py-1.5 text-sm text-white hover:bg-blue-500 shadow"
-            >
-              Book
-            </Link>
-
-            {role === "admin" && (
+            {role === 'admin' && (
               <Link
                 href="/dashboard/admin/business/new"
                 className="rounded-lg bg-black px-3 py-1.5 text-sm text-white hover:bg-black/90"
@@ -138,7 +128,6 @@ export default function Navbar() {
                 + Nuevo negocio
               </Link>
             )}
-
             <div className="w-8 h-8 flex items-center justify-center">
               <UserButton afterSignOutUrl="/" userProfileMode="navigation" />
             </div>
@@ -162,15 +151,17 @@ export default function Navbar() {
       {menuOpen && (
         <div className="md:hidden border-t bg-white dark:bg-gray-900 shadow-inner">
           <div className="flex flex-col p-4 gap-4">
-            <Link href="/" className={`text-sm ${isActive("/")}`}>
-              Inicio
+            {isAdminOrOwner && (
+              <Link href="/" className={`text-sm ${isActive('/')}`}>
+                Inicio
+              </Link>
+            )}
+            <Link href="/businesses" className={`text-sm ${isActive('/businesses')}`}>
+              Negocios
             </Link>
 
             <SignedIn>
-              <Link
-                href={dashboardPath}
-                className={`text-sm ${isActive(dashboardPath)}`}
-              >
+              <Link href={dashboardPath} className={`text-sm ${isActive(dashboardPath)}`}>
                 {dashboardLabel}
               </Link>
             </SignedIn>
@@ -181,7 +172,6 @@ export default function Navbar() {
                   Ingresar
                 </span>
               </SignInButton>
-
               <SignUpButton mode="modal">
                 <span className="rounded-lg bg-black px-3 py-1.5 text-sm text-white hover:bg-black/90 w-full text-left cursor-pointer">
                   Crear cuenta
@@ -190,13 +180,14 @@ export default function Navbar() {
             </SignedOut>
 
             <SignedIn>
-              <Link
-                href="/book"
-                className="rounded-lg bg-blue-600 px-3 py-1.5 text-sm text-white hover:bg-blue-500 shadow text-center"
-              >
-                Book
-              </Link>
-
+              {role === 'admin' && (
+                <Link
+                  href="/dashboard/admin/business/new"
+                  className="rounded-lg bg-black px-3 py-1.5 text-sm text-white hover:bg-black/90"
+                >
+                  + Nuevo negocio
+                </Link>
+              )}
               <div className="mt-2 w-8 h-8 flex items-center justify-center">
                 <UserButton afterSignOutUrl="/" userProfileMode="navigation" />
               </div>
@@ -217,5 +208,5 @@ export default function Navbar() {
         </div>
       )}
     </header>
-  );
+  )
 }
