@@ -117,27 +117,16 @@ export default function SettingsPage() {
   // 🔹 Cargar desde Supabase (color + rango)
   useEffect(() => {
     async function fetchColors() {
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from('settings')
         .select('role, value, min_luminosity, max_luminosity')
 
-      if (error) {
-        console.error('❌ Error cargando settings:', error)
-        return
-      }
-
-      // Copias locales
-      const newColors = { ...colors }
-      const newCustom = { ...customColors }
-      const newRange = { ...luminosityRange }
-
-      // 🔹 Marcar roles que ya tienen valor en BD
-      const rolesWithSettings = new Set()
-
       if (data) {
-        data.forEach((row) => {
-          rolesWithSettings.add(row.role)
+        const newColors = { ...colors }
+        const newCustom = { ...customColors }
+        const newRange = { ...luminosityRange }
 
+        data.forEach((row) => {
           if (row.value.startsWith('#')) {
             newColors[row.role] = 'custom'
             newCustom[row.role] = row.value
@@ -152,27 +141,12 @@ export default function SettingsPage() {
             }
           }
         })
-      }
 
-      // 🔹 Si faltan roles (primera vez), insertamos default azul
-      for (const role of roles) {
-        if (!rolesWithSettings.has(role)) {
-          await supabase.from('settings').insert({
-            role,
-            value: '#2563eb', // Azul default
-            min_luminosity: 0.1,
-            max_luminosity: 0.9,
-          })
-          newColors[role] = 'preset:azul'
-          newCustom[role] = '#2563eb'
-        }
+        setColors(newColors)
+        setCustomColors(newCustom)
+        setLuminosityRange(newRange)
       }
-
-      setColors(newColors)
-      setCustomColors(newCustom)
-      setLuminosityRange(newRange)
     }
-
     fetchColors()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -202,11 +176,7 @@ export default function SettingsPage() {
     )
 
     if (!error) {
-      // ✅ Solo aplicar el color global si coincide con el rol actual del usuario
-      const userRole = localStorage.getItem('currentRole') // o desde Clerk/metadata
-      if (userRole === role) {
-        setColor(value)
-      }
+      setColor(value)
       alert(`✅ Color del sidebar para ${role} actualizado`)
     }
   }

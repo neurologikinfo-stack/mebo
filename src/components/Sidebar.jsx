@@ -43,7 +43,7 @@ function getContrastYIQ(hexcolor) {
 export default function DashboardLayout({ title, menuItems = [], children }) {
   const pathname = usePathname()
   const [collapsed, setCollapsed] = useState(false)
-  const { color } = useSidebarColor() // Ej: "preset:azul", "preset:blanco", "#ad1485"
+  const { color } = useSidebarColor()
 
   // 🔹 Determinar estilos
   let bgColor,
@@ -62,10 +62,15 @@ export default function DashboardLayout({ title, menuItems = [], children }) {
     bgColor = color
     textColor = getContrastYIQ(color)
   } else {
-    // fallback gris oscuro
     bgColor = '#1f2937'
     textColor = 'white'
   }
+
+  // 🔹 Hover/active dinámico según contraste
+  const hoverBg =
+    textColor === 'white'
+      ? 'rgba(255,255,255,0.2)' // fondos oscuros
+      : 'rgba(0,0,0,0.1)' // fondos claros
 
   return (
     <div className="flex min-h-screen bg-background text-foreground">
@@ -98,10 +103,17 @@ export default function DashboardLayout({ title, menuItems = [], children }) {
               <Link
                 key={item.href}
                 href={item.href}
-                className={`flex items-center gap-3 rounded-md py-2 pl-4 pr-2 text-sm font-medium ${
-                  active ? 'bg-black/10 dark:bg-white/10' : ''
-                }`}
-                style={extraClass ? {} : { color: textColor }}
+                className="flex items-center gap-3 rounded-md py-2 pl-4 pr-2 text-sm font-medium"
+                style={{
+                  color: extraClass ? undefined : textColor,
+                  backgroundColor: active ? hoverBg : 'transparent',
+                }}
+                onMouseEnter={(e) => {
+                  if (!active) e.currentTarget.style.backgroundColor = hoverBg
+                }}
+                onMouseLeave={(e) => {
+                  if (!active) e.currentTarget.style.backgroundColor = 'transparent'
+                }}
               >
                 <Icon className="h-5 w-5 flex-shrink-0" />
                 {!collapsed && <span>{item.name}</span>}
