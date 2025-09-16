@@ -1,0 +1,63 @@
+body {
+  font-family: Arial, sans-serif;
+  padding: 10px;
+  width: 280px;
+}
+
+h2 {
+  font-size: 16px;
+  margin-bottom: 10px;
+}
+
+ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+li {
+  margin: 5px 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+a {
+  color: #007bff;
+  text-decoration: none;
+  flex: 1;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+/* 🔹 Botones individuales (❌ por pestaña) */
+button {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+button:hover {
+  color: red;
+}
+
+/* 🔹 Botón global "Cerrar todas" */
+#closeAll {
+  background: #ff4d4d;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  margin-bottom: 10px;
+  cursor: pointer;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: bold;
+  width: 100%;
+}
+
+#closeAll:hover {
+  background: #cc0000;
+}

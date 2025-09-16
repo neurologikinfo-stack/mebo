@@ -112,19 +112,33 @@ export async function PATCH(req, { params }) {
       return NextResponse.json({ ok: false, error: updateProfileError.message }, { status: 400 })
     }
 
-    // 3️⃣ Sincronizar en Clerk
+    // 3️⃣ Sincronizar en Clerk con logs
     try {
-      await clerkClient.users.updateUser(clerk_id, {
-        firstName: full_name, // nombre
-        lastName: '.', // placeholder para que se muestre siempre algo
-        imageUrl: avatar_url, // avatar
+      console.log('👉 Intentando actualizar en Clerk:', {
+        clerk_id,
+        firstName: full_name,
+        imageUrl: avatar_url,
+        phone,
+      })
+
+      const updated = await clerkClient.users.updateUser(clerk_id, {
+        firstName: full_name || null,
+        lastName: '.', // placeholder
+        imageUrl: avatar_url || null, // debe ser URL pública
         publicMetadata: {
-          phone: phone || null, // guardamos teléfono en metadata pública
+          phone: phone || null,
         },
       })
+
+      console.log('✅ Clerk actualizado:', {
+        id: updated.id,
+        firstName: updated.firstName,
+        lastName: updated.lastName,
+        imageUrl: updated.imageUrl,
+        phone: updated.publicMetadata?.phone,
+      })
     } catch (clerkErr) {
-      console.warn('⚠️ No se pudo actualizar Clerk:', clerkErr.message)
-      // no cortamos el flujo: si falla Clerk, Supabase ya quedó actualizado
+      console.error('❌ Error actualizando en Clerk:', clerkErr.message)
     }
 
     return NextResponse.json({ ok: true })
