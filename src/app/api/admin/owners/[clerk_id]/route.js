@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { supabaseServer } from '@/utils/supabase/server'
-import { auth } from '@clerk/nextjs/server'
+import { auth, clerkClient } from '@clerk/nextjs/server'
 
 // ==========================
 // GET: obtener un owner + businesses (por clerk_id)
@@ -69,7 +69,7 @@ export async function GET(req, { params }) {
 }
 
 // ==========================
-// PATCH: actualizar owner + profile (por clerk_id)
+// PATCH: actualizar owner + profile + Clerk (por clerk_id)
 // ==========================
 export async function PATCH(req, { params }) {
   try {
@@ -110,6 +110,21 @@ export async function PATCH(req, { params }) {
 
     if (updateProfileError) {
       return NextResponse.json({ ok: false, error: updateProfileError.message }, { status: 400 })
+    }
+
+    // 3️⃣ Sincronizar en Clerk
+    try {
+      await clerkClient.users.updateUser(clerk_id, {
+        firstName: full_name, // nombre
+        lastName: '.', // placeholder para que se muestre siempre algo
+        imageUrl: avatar_url, // avatar
+        publicMetadata: {
+          phone: phone || null, // guardamos teléfono en metadata pública
+        },
+      })
+    } catch (clerkErr) {
+      console.warn('⚠️ No se pudo actualizar Clerk:', clerkErr.message)
+      // no cortamos el flujo: si falla Clerk, Supabase ya quedó actualizado
     }
 
     return NextResponse.json({ ok: true })
