@@ -14,7 +14,7 @@ const presetColors = {
   'preset:purpura': '#9333ea',
   'preset:rosa': '#db2777',
   'preset:negro': '#000000',
-  'preset:blanco': '#ffffff', // 👈 en lugar de claro
+  'preset:blanco': '#ffffff',
 }
 
 const SidebarColorContext = createContext(undefined)
@@ -32,11 +32,12 @@ function hexToRgb(hex) {
 function getContrastYIQ(hex) {
   const { r, g, b } = hexToRgb(hex)
   const yiq = (r * 299 + g * 587 + b * 114) / 1000
-  return yiq >= 128 ? '0 0 0' : '255 255 255' // negro o blanco en formato RGB
+  return yiq >= 128 ? '0 0 0' : '255 255 255'
 }
 
 export function SidebarColorProvider({ role, children }) {
-  const [color, setColor] = useState('preset:gris')
+  const [color, setColor] = useState(null) // 👈 null al inicio
+  const [loading, setLoading] = useState(true)
 
   function applyBrandColor(value) {
     let hex = ''
@@ -57,6 +58,14 @@ export function SidebarColorProvider({ role, children }) {
   }
 
   useEffect(() => {
+    // 1️⃣ Intentar leer de localStorage primero
+    const stored = localStorage.getItem(`sidebar-color-${role}`)
+    if (stored) {
+      setColor(stored)
+      applyBrandColor(stored)
+    }
+
+    // 2️⃣ Traer de Supabase
     async function fetchColor() {
       const { data } = await supabase
         .from('settings')
@@ -67,11 +76,14 @@ export function SidebarColorProvider({ role, children }) {
       if (data?.value) {
         setColor(data.value)
         applyBrandColor(data.value)
+        localStorage.setItem(`sidebar-color-${role}`, data.value) // guardar cache
       }
+      setLoading(false)
     }
 
     fetchColor()
 
+    // 3️⃣ Escuchar cambios en realtime
     const channel = supabase
       .channel('settings-changes')
       .on(
@@ -81,6 +93,7 @@ export function SidebarColorProvider({ role, children }) {
           if (payload.new?.value) {
             setColor(payload.new.value)
             applyBrandColor(payload.new.value)
+            localStorage.setItem(`sidebar-color-${role}`, payload.new.value)
           }
         }
       )
@@ -91,9 +104,14 @@ export function SidebarColorProvider({ role, children }) {
     }
   }, [role])
 
-  useEffect(() => {
-    if (color) applyBrandColor(color)
-  }, [color])
+  // 4️⃣ Si no hay color cargado todavía → renderizamos un estado neutro
+  if (loading && !color) {
+    return (
+      <div className="w-full h-screen bg-background flex items-center justify-center">
+        <span className="text-muted-foreground">Cargando...</span>
+      </div>
+    )
+  }
 
   return (
     <SidebarColorContext.Provider value={{ color, setColor }}>

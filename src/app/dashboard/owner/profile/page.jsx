@@ -1,62 +1,94 @@
-"use client";
+'use client'
 
-import useProfile from "@/hooks/useProfile";
-import { useState, useEffect } from "react";
+import { useUser } from '@clerk/nextjs'
+import { useState, useEffect } from 'react'
+import useOwnerUser from '@/hooks/useOwnerUser'
 
 export default function OwnerProfilePage() {
-  const { profile, loading, error, saving, saveProfile, uploadAvatar } =
-    useProfile();
-  const [localProfile, setLocalProfile] = useState(null);
-  const [message, setMessage] = useState("");
+  const { user } = useUser()
+  const clerk_id = user?.id // 👈 ID de Clerk (text, tipo "user_xxx")
 
-  // ✅ sincronizar el perfil cargado desde el hook a localProfile
+  const { user: dbUser, loading, error, saving, saveUser } = useOwnerUser(clerk_id)
+
+  const [form, setForm] = useState({
+    full_name: '',
+    email: '',
+    phone: '',
+    avatar_url: '',
+    role: 'owner',
+  })
+  const [uploading, setUploading] = useState(false)
+  const [message, setMessage] = useState('')
+
+  // 🔹 Inicializar datos
   useEffect(() => {
-    if (profile) setLocalProfile(profile);
-  }, [profile]);
+    if (dbUser) {
+      setForm({
+        full_name: dbUser.full_name || user.fullName || '',
+        email: dbUser.email || user.primaryEmailAddress?.emailAddress || '',
+        phone: dbUser.phone || '',
+        avatar_url: dbUser.avatar_url || '',
+        role: dbUser.role || 'owner',
+      })
+    }
+  }, [dbUser, user])
 
-  async function handleSave(e) {
-    e.preventDefault();
-    if (!localProfile) return;
+  // 🔹 Subir avatar
+  async function handleAvatarUpload(e) {
+    const file = e.target.files?.[0]
+    if (!file || !clerk_id) return
 
     try {
-      await saveProfile(localProfile);
-      setMessage("✅ Perfil actualizado correctamente");
+      setUploading(true)
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('clerk_id', clerk_id)
+
+      const res = await fetch('/api/upload-avatar', {
+        method: 'POST',
+        body: formData,
+      })
+
+      const result = await res.json()
+      if (!res.ok || !result.ok) throw new Error(result.error)
+
+      setForm((prev) => ({ ...prev, avatar_url: result.url }))
+      setMessage('✅ Avatar actualizado')
     } catch (err) {
-      setMessage("❌ Error al guardar: " + err.message);
+      setMessage('❌ ' + err.message)
     } finally {
-      setTimeout(() => setMessage(""), 4000);
+      setUploading(false)
+      setTimeout(() => setMessage(''), 4000)
     }
   }
 
-  async function handleAvatarUpload(e) {
-    const file = e.target.files[0];
-    if (!file) return;
+  // 🔹 Guardar cambios
+  async function handleSave(e) {
+    e.preventDefault()
+    if (!clerk_id) return
 
-    const res = await uploadAvatar(file);
-    if (res.ok) {
-      setLocalProfile((prev) => ({ ...prev, avatar_url: res.avatar_url }));
-      setMessage("✅ Avatar actualizado");
-    } else {
-      setMessage("❌ Error al subir avatar: " + res.error);
+    try {
+      const res = await saveUser(form)
+      if (!res.ok) throw new Error(res.error || 'No se pudo actualizar')
+
+      setMessage('✅ Perfil actualizado correctamente')
+    } catch (err) {
+      setMessage('❌ ' + err.message)
+    } finally {
+      setTimeout(() => setMessage(''), 4000)
     }
-    setTimeout(() => setMessage(""), 4000);
   }
 
-  if (loading)
-    return <p className="text-muted-foreground">⏳ Cargando perfil...</p>;
-  if (error) return <p className="text-red-600">❌ {error}</p>;
-  if (!localProfile) return null;
+  if (!clerk_id) return <p className="p-6">⚠️ No autenticado</p>
+  if (loading) return <p className="p-6">⏳ Cargando perfil...</p>
+  if (error) return <p className="p-6 text-red-500">❌ {error}</p>
 
   return (
     <div className="space-y-8 max-w-lg mx-auto">
-      <h1 className="text-2xl font-bold text-gray-800">Perfil Propietario</h1>
+      <h1 className="text-2xl font-bold">Perfil Propietario</h1>
 
       {message && (
-        <p
-          className={`text-sm ${
-            message.startsWith("✅") ? "text-green-600" : "text-red-600"
-          }`}
-        >
+        <p className={`text-sm ${message.startsWith('✅') ? 'text-green-600' : 'text-red-600'}`}>
           {message}
         </p>
       )}
@@ -65,75 +97,62 @@ export default function OwnerProfilePage() {
         {/* Avatar */}
         <div className="flex items-center gap-4">
           <img
-            src={localProfile.avatar_url || "/default-avatar.png"}
+            src={form.avatar_url || '/default-avatar.png'}
             alt="Avatar"
             className="w-20 h-20 rounded-full border object-cover"
           />
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Cambiar avatar
-            </label>
-            <input
-              type="file"
-              accept="image/*"
-              onChange={handleAvatarUpload}
-              className="mt-1 block text-sm"
-            />
-          </div>
+          <input type="file" accept="image/*" onChange={handleAvatarUpload} disabled={uploading} />
         </div>
 
-        {/* Nombre */}
         <div>
-          <label className="block text-sm font-medium text-gray-700">
-            Nombre completo
-          </label>
+          <label>Nombre completo</label>
           <input
             type="text"
-            value={localProfile.full_name}
-            onChange={(e) =>
-              setLocalProfile({ ...localProfile, full_name: e.target.value })
-            }
-            className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 shadow-sm focus:ring-2 focus:ring-blue-500"
+            value={form.full_name}
+            onChange={(e) => setForm({ ...form, full_name: e.target.value })}
+            className="block w-full border rounded px-3 py-2"
           />
         </div>
 
-        {/* Email */}
         <div>
-          <label className="block text-sm font-medium text-gray-700">
-            Email
-          </label>
+          <label>Email</label>
           <input
             type="email"
-            value={localProfile.email}
+            value={form.email}
             disabled
-            className="mt-1 block w-full rounded-lg border border-gray-200 bg-gray-100 px-3 py-2 shadow-sm"
+            className="block w-full border rounded px-3 py-2 bg-gray-100"
           />
         </div>
 
-        {/* Teléfono */}
         <div>
-          <label className="block text-sm font-medium text-gray-700">
-            Teléfono
-          </label>
+          <label>Teléfono</label>
           <input
             type="text"
-            value={localProfile.phone || ""}
-            onChange={(e) =>
-              setLocalProfile({ ...localProfile, phone: e.target.value })
-            }
+            value={form.phone}
+            onChange={(e) => setForm({ ...form, phone: e.target.value })}
             placeholder="+1 506 555 1234"
-            className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 shadow-sm focus:ring-2 focus:ring-blue-500"
+            className="block w-full border rounded px-3 py-2"
+          />
+        </div>
+
+        <div>
+          <label>Rol</label>
+          <input
+            type="text"
+            value={form.role}
+            disabled
+            className="block w-full border rounded px-3 py-2 bg-gray-100"
           />
         </div>
 
         <button
           type="submit"
-          disabled={saving}
-          className="rounded-lg bg-blue-600 px-4 py-2 text-sm text-white shadow hover:bg-blue-500 disabled:opacity-50"
+          disabled={saving || uploading}
+          className="px-4 py-2 bg-primary text-primary-foreground rounded hover:opacity-90 disabled:opacity-50"
         >
-          {saving ? "Guardando..." : "Guardar cambios"}
+          {saving || uploading ? 'Guardando...' : 'Guardar cambios'}
         </button>
       </form>
     </div>
-  );
+  )
 }

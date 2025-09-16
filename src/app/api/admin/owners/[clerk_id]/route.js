@@ -3,19 +3,18 @@ import { supabaseServer } from '@/utils/supabase/server'
 import { auth } from '@clerk/nextjs/server'
 
 // ==========================
-// GET: obtener un owner + businesses (por id o clerk_id)
+// GET: obtener un owner + businesses (por clerk_id)
 // ==========================
 export async function GET(req, { params }) {
   try {
-    const { id } = params
-    if (!id) {
-      return NextResponse.json({ ok: false, error: 'Falta ID' }, { status: 400 })
+    const { clerk_id } = params
+    if (!clerk_id) {
+      return NextResponse.json({ ok: false, error: 'Falta clerk_id' }, { status: 400 })
     }
 
     const supabase = supabaseServer()
 
-    // 1️⃣ Buscar primero por owners.id
-    let { data, error } = await supabase
+    const { data, error } = await supabase
       .from('owners')
       .select(
         `
@@ -40,42 +39,8 @@ export async function GET(req, { params }) {
         )
       `
       )
-      .eq('id', id)
+      .eq('clerk_id', clerk_id)
       .maybeSingle()
-
-    // 2️⃣ Si no encontró, buscar por clerk_id
-    if (!data || error) {
-      const { data: alt, error: altErr } = await supabase
-        .from('owners')
-        .select(
-          `
-          id,
-          clerk_id,
-          status,
-          created_at,
-          profiles:profiles!inner (
-            full_name,
-            email,
-            phone,
-            avatar_url
-          ),
-          businesses (
-            id,
-            name,
-            slug,
-            email,
-            phone,
-            logo_url,
-            deleted_at
-          )
-        `
-        )
-        .eq('clerk_id', id)
-        .maybeSingle()
-
-      data = alt
-      error = altErr
-    }
 
     if (error) {
       return NextResponse.json({ ok: false, error: error.message }, { status: 500 })
@@ -85,7 +50,6 @@ export async function GET(req, { params }) {
       return NextResponse.json({ ok: false, error: 'Owner no encontrado' }, { status: 404 })
     }
 
-    // 🔹 Flatten para frontend
     const owner = {
       id: data.id,
       clerk_id: data.clerk_id,
@@ -105,7 +69,7 @@ export async function GET(req, { params }) {
 }
 
 // ==========================
-// PATCH: actualizar owner + profile
+// PATCH: actualizar owner + profile (por clerk_id)
 // ==========================
 export async function PATCH(req, { params }) {
   try {
@@ -114,41 +78,27 @@ export async function PATCH(req, { params }) {
       return NextResponse.json({ ok: false, error: 'No autorizado' }, { status: 401 })
     }
 
-    const { id } = params
+    const { clerk_id } = params
     const body = await req.json()
     const { full_name, status, phone, avatar_url } = body
 
-    if (!id) {
-      return NextResponse.json({ ok: false, error: 'Falta ID' }, { status: 400 })
+    if (!clerk_id) {
+      return NextResponse.json({ ok: false, error: 'Falta clerk_id' }, { status: 400 })
     }
 
     const supabase = supabaseServer()
 
-    // 1️⃣ Buscar owner para obtener clerk_id
-    const { data: owner, error: ownerError } = await supabase
-      .from('owners')
-      .select('id, clerk_id')
-      .eq('id', id)
-      .maybeSingle()
-
-    if (ownerError || !owner) {
-      return NextResponse.json(
-        { ok: false, error: ownerError?.message || 'Owner no encontrado' },
-        { status: 404 }
-      )
-    }
-
-    // 2️⃣ Actualizar estado en owners
+    // 1️⃣ Actualizar estado en owners
     const { error: updateOwnerError } = await supabase
       .from('owners')
       .update({ status })
-      .eq('id', id)
+      .eq('clerk_id', clerk_id)
 
     if (updateOwnerError) {
       return NextResponse.json({ ok: false, error: updateOwnerError.message }, { status: 400 })
     }
 
-    // 3️⃣ Actualizar perfil en profiles
+    // 2️⃣ Actualizar perfil en profiles
     const { error: updateProfileError } = await supabase
       .from('profiles')
       .update({
@@ -156,7 +106,7 @@ export async function PATCH(req, { params }) {
         phone,
         avatar_url,
       })
-      .eq('clerk_id', owner.clerk_id)
+      .eq('clerk_id', clerk_id)
 
     if (updateProfileError) {
       return NextResponse.json({ ok: false, error: updateProfileError.message }, { status: 400 })
@@ -169,7 +119,7 @@ export async function PATCH(req, { params }) {
 }
 
 // ==========================
-// DELETE: eliminar owner
+// DELETE: eliminar owner (por clerk_id)
 // ==========================
 export async function DELETE(req, { params }) {
   try {
@@ -178,13 +128,13 @@ export async function DELETE(req, { params }) {
       return NextResponse.json({ ok: false, error: 'No autorizado' }, { status: 401 })
     }
 
-    const { id } = params
-    if (!id) {
-      return NextResponse.json({ ok: false, error: 'Falta ID' }, { status: 400 })
+    const { clerk_id } = params
+    if (!clerk_id) {
+      return NextResponse.json({ ok: false, error: 'Falta clerk_id' }, { status: 400 })
     }
 
     const supabase = supabaseServer()
-    const { error } = await supabase.from('owners').delete().eq('id', id)
+    const { error } = await supabase.from('owners').delete().eq('clerk_id', clerk_id)
 
     if (error) {
       return NextResponse.json({ ok: false, error: error.message }, { status: 400 })

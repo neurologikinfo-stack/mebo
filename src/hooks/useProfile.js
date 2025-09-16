@@ -1,109 +1,120 @@
-"use client";
-import { useEffect, useState } from "react";
-import { useUser } from "@clerk/nextjs";
-import { supabase } from "@/utils/supabase/client";
+'use client'
+import { useEffect, useState } from 'react'
+import { useUser } from '@clerk/nextjs'
+import { supabase } from '@/utils/supabase/client'
 
 export default function useProfile() {
-  const { user } = useUser();
-  const [profile, setProfile] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [saving, setSaving] = useState(false);
+  const { user } = useUser()
+  const [profile, setProfile] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+  const [saving, setSaving] = useState(false)
 
   // 🔹 Cargar perfil
   useEffect(() => {
-    if (!user) return;
+    if (!user) return
 
     async function fetchProfile() {
-      setLoading(true);
-      setError(null);
+      setLoading(true)
+      setError(null)
 
       try {
-        const clerkId = user.id;
-        const clerkIdNoPrefix = clerkId.replace(/^user_/, "");
+        const clerkId = user.id
+        const clerkIdNoPrefix = clerkId.replace(/^user_/, '')
 
         const { data, error } = await supabase
-          .from("profiles")
-          .select("id, full_name, email, phone, avatar_url, role, clerk_id")
+          .from('profiles')
+          .select('id, full_name, email, phone, avatar_url, role, clerk_id')
           .or(`clerk_id.eq.${clerkId},clerk_id.eq.${clerkIdNoPrefix}`)
-          .maybeSingle();
+          .maybeSingle()
 
-        if (error) throw error;
+        if (error) throw error
 
         if (data) {
-          setProfile(data);
+          setProfile(data)
         } else {
           // inicializar si no existe
           setProfile({
-            full_name: user.fullName || "",
-            email: user.primaryEmailAddress?.emailAddress || "",
-            phone: "",
-            avatar_url: "",
-            role: "owner",
+            full_name: user.fullName || '',
+            email: user.primaryEmailAddress?.emailAddress || '',
+            phone: '',
+            avatar_url: '',
+            role: 'owner',
             clerk_id: clerkId,
-          });
+          })
         }
       } catch (err) {
-        console.error("❌ Error cargando perfil:", err);
-        setError(err.message);
+        console.error('❌ Error cargando perfil:', err)
+        setError(err.message)
       } finally {
-        setLoading(false);
+        setLoading(false)
       }
     }
 
-    fetchProfile();
-  }, [user]);
+    fetchProfile()
+  }, [user])
 
   // 🔹 Guardar cambios
   async function saveProfile(updates) {
-    if (!user) return;
-    setSaving(true);
+    if (!user) return
+    setSaving(true)
 
     try {
-      const { error } = await supabase.from("profiles").upsert(
+      const { error } = await supabase.from('profiles').upsert(
         {
           clerk_id: user.id,
           ...updates,
         },
-        { onConflict: ["clerk_id"] }
-      );
+        { onConflict: ['clerk_id'] }
+      )
 
-      if (error) throw error;
+      if (error) throw error
 
-      setProfile((prev) => ({ ...prev, ...updates }));
-      return { ok: true };
+      setProfile((prev) => ({ ...prev, ...updates }))
+      return { ok: true }
     } catch (err) {
-      console.error("❌ Error guardando perfil:", err);
-      return { ok: false, error: err.message };
+      console.error('❌ Error guardando perfil:', err)
+      return { ok: false, error: err.message }
     } finally {
-      setSaving(false);
+      setSaving(false)
     }
   }
 
   // 🔹 Subir avatar
+  // dentro de useProfile.js
   async function uploadAvatar(file) {
-    if (!file || !user) return;
+    try {
+      const fileExt = file.name.split('.').pop()
+      const fileName = `${clerk_id}-${Date.now()}.${fileExt}`
+      const filePath = `avatars/${fileName}`
 
-    const fileExt = file.name.split(".").pop();
-    const filePath = `${user.id}/avatar.${fileExt}`;
+      // Subir archivo al bucket avatars
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, file, { upsert: true })
 
-    const { error: uploadError } = await supabase.storage
-      .from("avatars")
-      .upload(filePath, file, { cacheControl: "3600", upsert: true });
+      if (uploadError) throw uploadError
 
-    if (uploadError) {
-      return { ok: false, error: uploadError.message };
+      // Obtener URL pública
+      const { data: publicUrlData } = supabase.storage.from('avatars').getPublicUrl(filePath)
+
+      const avatar_url = publicUrlData.publicUrl
+
+      // Actualizar perfil
+      const { data, error } = await supabase
+        .from('profiles')
+        .update({ avatar_url })
+        .eq('clerk_id', clerk_id)
+        .select()
+        .single()
+
+      if (error) throw error
+
+      return { ok: true, avatar_url }
+    } catch (err) {
+      console.error('❌ Error subiendo avatar:', err.message)
+      return { ok: false, error: err.message }
     }
-
-    const {
-      data: { publicUrl },
-    } = supabase.storage.from("avatars").getPublicUrl(filePath);
-
-    // actualizar en BD
-    const res = await saveProfile({ avatar_url: publicUrl });
-    if (!res.ok) return res;
-
-    return { ok: true, avatar_url: publicUrl };
   }
 
   return {
@@ -113,5 +124,5 @@ export default function useProfile() {
     saving,
     saveProfile,
     uploadAvatar,
-  };
+  }
 }

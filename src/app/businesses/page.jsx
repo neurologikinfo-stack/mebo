@@ -69,7 +69,9 @@ export default function BusinessesPage() {
 
             <CardFooter>
               <Link href={`/${b.slug}/book`} className="w-full">
-                <Button className="w-full bg-blue-600 text-white hover:bg-blue-500">Book</Button>
+                <Button className="w-full bg-primary text-primary-foreground hover:bg-primary/90">
+                  Book
+                </Button>
               </Link>
             </CardFooter>
           </Card>

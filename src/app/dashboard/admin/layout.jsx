@@ -12,6 +12,7 @@ import {
   LockKeyhole,
   Settings,
   User,
+  FileText, // 👈 agregamos un ícono para Policies
 } from 'lucide-react'
 
 const adminMenu = [
@@ -21,6 +22,7 @@ const adminMenu = [
   { name: 'Negocios', href: '/dashboard/admin/business', icon: Briefcase },
   { name: 'Owners', href: '/dashboard/admin/owners', icon: UserCog },
   { name: 'Permisos', href: '/dashboard/admin/permissions', icon: Shield },
+  { name: 'Policies', href: '/dashboard/admin/policies', icon: FileText }, // ✅ nueva opción
   { name: 'Reportes', href: '/dashboard/admin/reports', icon: BarChart3 },
   { name: 'Perfil', href: '/dashboard/admin/profile', icon: User },
   { name: 'Configuración', href: '/dashboard/admin/settings', icon: Settings },

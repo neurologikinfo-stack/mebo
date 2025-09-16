@@ -1,4 +1,5 @@
 'use client'
+
 import { useState, useEffect } from 'react'
 import { supabase } from '@/utils/supabase/client'
 import { useSidebarColor } from '@/context/SidebarColorContext'
@@ -19,71 +20,134 @@ const presetColors = [
   { label: 'Blanco', value: 'preset:blanco', hex: '#ffffff' },
 ]
 
-// 🔹 Ajuste de luminosidad
-function adjustColor(hex, percent) {
+// --- Utils HEX <-> HSL ---
+function hexToHsl(hex) {
   hex = hex.replace(/^#/, '')
-  const num = parseInt(hex, 16)
-  let r = (num >> 16) + percent
-  let g = ((num >> 8) & 0x00ff) + percent
-  let b = (num & 0x0000ff) + percent
-  r = Math.min(255, Math.max(0, r))
-  g = Math.min(255, Math.max(0, g))
-  b = Math.min(255, Math.max(0, b))
-  return `#${(b | (g << 8) | (r << 16)).toString(16).padStart(6, '0')}`
+  const r = parseInt(hex.substring(0, 2), 16) / 255
+  const g = parseInt(hex.substring(2, 4), 16) / 255
+  const b = parseInt(hex.substring(4, 6), 16) / 255
+  const max = Math.max(r, g, b)
+  const min = Math.min(r, g, b)
+  let h, s
+  let l = (max + min) / 2
+
+  if (max === min) {
+    h = s = 0
+  } else {
+    const d = max - min
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min)
+    switch (max) {
+      case r:
+        h = (g - b) / d + (g < b ? 6 : 0)
+        break
+      case g:
+        h = (b - r) / d + 2
+        break
+      case b:
+        h = (r - g) / d + 4
+        break
+    }
+    h /= 6
+  }
+  return { h, s, l }
+}
+
+function hslToHex(h, s, l) {
+  let r, g, b
+  if (s === 0) {
+    r = g = b = l
+  } else {
+    const hue2rgb = (p, q, t) => {
+      if (t < 0) t += 1
+      if (t > 1) t -= 1
+      if (t < 1 / 6) return p + (q - p) * 6 * t
+      if (t < 1 / 2) return q
+      if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6
+      return p
+    }
+    const q = l < 0.5 ? l * (1 + s) : l + s - l * s
+    const p = 2 * l - q
+    r = hue2rgb(p, q, h + 1 / 3)
+    g = hue2rgb(p, q, h)
+    b = hue2rgb(p, q, h - 1 / 3)
+  }
+  const toHex = (x) =>
+    Math.round(x * 255)
+      .toString(16)
+      .padStart(2, '0')
+  return `#${toHex(r)}${toHex(g)}${toHex(b)}`
+}
+
+function adjustColor(hex, percent, minL = 0.1, maxL = 0.9) {
+  const { h, s, l } = hexToHsl(hex)
+  let newL = l + percent / 100
+  newL = Math.max(minL, Math.min(maxL, newL))
+  return hslToHex(h, s, newL)
 }
 
 export default function OwnerSettingsPage() {
   const { setColor: setSidebarColor } = useSidebarColor()
+  const role = 'owner'
+
   const [color, setColor] = useState('preset:azul')
   const [customColor, setCustomColor] = useState('#2563eb')
   const [adjustment, setAdjustment] = useState(0)
 
-  // cargar color actual
   useEffect(() => {
     async function fetchColor() {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('settings')
         .select('value')
-        .eq('role', 'owner')
+        .eq('role', role)
         .maybeSingle()
-      if (data?.value) {
+
+      if (!error && data) {
         if (data.value.startsWith('#')) {
           setColor('custom')
           setCustomColor(data.value)
         } else {
           setColor(data.value)
         }
+      } else {
+        // Primera vez: insert azul
+        await supabase.from('settings').insert({
+          role,
+          value: '#2563eb',
+        })
       }
     }
     fetchColor()
   }, [])
 
-  // guardar color
   async function handleSave() {
-    let base = color === 'custom' ? customColor : presetColors.find((c) => c.value === color)?.hex
-    let value = adjustColor(base, adjustment)
+    const base = color === 'custom' ? customColor : presetColors.find((c) => c.value === color)?.hex
+    const value = adjustColor(base, adjustment)
 
     const { error } = await supabase
       .from('settings')
-      .upsert({ role: 'owner', value }, { onConflict: 'role' })
+      .upsert({ role, value }, { onConflict: 'role' })
+
     if (!error) {
       setSidebarColor(value)
       alert('✅ Color del sidebar de Propietario actualizado')
     }
   }
 
+  const base = color === 'custom' ? customColor : presetColors.find((c) => c.value === color)?.hex
+  const previewColor = adjustColor(base, adjustment)
+
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold text-foreground">Configuración Propietario</h1>
       <p className="text-muted-foreground">
-        Aquí puedes administrar la configuración de tu cuenta como propietario, las preferencias de
-        tus negocios y notificaciones.
+        Aquí puedes administrar la configuración de tu cuenta como propietario.
       </p>
 
       <div className="p-6 bg-card rounded-xl shadow border space-y-4">
         <h2 className="text-lg font-semibold">Personalización</h2>
         <p className="text-sm text-muted-foreground">Elige un color para el sidebar</p>
 
+        {/* Paleta */}
         <div className="flex flex-wrap gap-4">
           {presetColors.map((opt) => (
             <button
@@ -103,7 +167,7 @@ export default function OwnerSettingsPage() {
             </button>
           ))}
 
-          {/* custom */}
+          {/* Custom */}
           <div className="relative w-10 h-10">
             <input
               type="color"
@@ -128,19 +192,25 @@ export default function OwnerSettingsPage() {
           </div>
         </div>
 
-        {/* slider siempre visible */}
-        <div className="mt-4">
-          <label className="block text-sm font-medium text-foreground">Ajustar luminosidad</label>
-          <input
-            type="range"
-            min={-50}
-            max={50}
-            step={10}
-            value={adjustment}
-            onChange={(e) => setAdjustment(parseInt(e.target.value, 10))}
-            className="w-full"
+        {/* Ajuste luminosidad con preview */}
+        <div className="mt-4 flex items-center gap-4">
+          <div className="flex-1">
+            <label className="block text-sm font-medium text-foreground">Ajustar luminosidad</label>
+            <input
+              type="range"
+              min={-100}
+              max={100}
+              step={5}
+              value={adjustment}
+              onChange={(e) => setAdjustment(parseInt(e.target.value, 10))}
+              className="w-full"
+            />
+            <p className="text-xs text-muted-foreground">{adjustment}%</p>
+          </div>
+          <div
+            className="w-10 h-10 rounded-full border"
+            style={{ backgroundColor: previewColor }}
           />
-          <p className="text-xs text-muted-foreground">{adjustment}%</p>
         </div>
 
         <button
@@ -149,16 +219,6 @@ export default function OwnerSettingsPage() {
         >
           Guardar
         </button>
-      </div>
-
-      <div className="p-6 bg-card rounded-xl shadow border space-y-4">
-        <h2 className="text-lg font-semibold">Opciones</h2>
-        <ul className="list-disc list-inside text-muted-foreground">
-          <li>Configurar alertas de pagos</li>
-          <li>Preferencias de comunicación con clientes</li>
-          <li>Actualizar contraseña</li>
-          <li>Eliminar cuenta</li>
-        </ul>
       </div>
     </div>
   )

@@ -84,74 +84,87 @@ function adjustColor(hex, percent, minL = 0.1, maxL = 0.9) {
   return hslToHex(h, s, newL)
 }
 
-export default function CustomerSettingsPage() {
-  const { setColor: setSidebarColor } = useSidebarColor()
-  const role = 'customer'
+export default function AdminSettingsPage() {
+  const { setColor } = useSidebarColor()
+  const role = 'admin'
 
-  const [color, setColor] = useState('preset:azul')
+  const [color, setColorValue] = useState('preset:azul')
   const [customColor, setCustomColor] = useState('#2563eb')
   const [adjustment, setAdjustment] = useState(0)
+  const [range, setRange] = useState({ min: 0.1, max: 0.9 })
 
+  // --- Load from DB ---
   useEffect(() => {
     async function fetchColor() {
       const { data, error } = await supabase
         .from('settings')
-        .select('value')
+        .select('value, min_luminosity, max_luminosity')
         .eq('role', role)
         .maybeSingle()
 
       if (!error && data) {
         if (data.value.startsWith('#')) {
-          setColor('custom')
+          setColorValue('custom')
           setCustomColor(data.value)
         } else {
-          setColor(data.value)
+          setColorValue(data.value)
         }
+        setRange({
+          min: data.min_luminosity || 0.1,
+          max: data.max_luminosity || 0.9,
+        })
       } else {
-        // Primera vez: insertamos azul
+        // First time: insert azul
         await supabase.from('settings').insert({
           role,
           value: '#2563eb',
+          min_luminosity: 0.1,
+          max_luminosity: 0.9,
         })
       }
     }
     fetchColor()
   }, [])
 
+  // --- Save ---
   async function handleSave() {
     const base = color === 'custom' ? customColor : presetColors.find((c) => c.value === color)?.hex
-    const value = adjustColor(base, adjustment)
 
-    const { error } = await supabase
-      .from('settings')
-      .upsert({ role, value }, { onConflict: 'role' })
+    const value = adjustColor(base, adjustment, range.min, range.max)
+
+    const { error } = await supabase.from('settings').upsert(
+      {
+        role,
+        value,
+        min_luminosity: range.min,
+        max_luminosity: range.max,
+      },
+      { onConflict: 'role' }
+    )
 
     if (!error) {
-      setSidebarColor(value)
-      alert('✅ Color del sidebar de Cliente actualizado')
+      setColor(value) // aplica al sidebar
+      alert('✅ Color del sidebar para admin actualizado')
     }
   }
 
   const base = color === 'custom' ? customColor : presetColors.find((c) => c.value === color)?.hex
-  const previewColor = adjustColor(base, adjustment)
+  const previewColor = adjustColor(base, adjustment, range.min, range.max)
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-foreground">Configuración Cliente</h1>
+      <h1 className="text-2xl font-bold text-foreground">Personalización Admin</h1>
       <p className="text-muted-foreground">
-        Aquí puedes personalizar tus preferencias y el color de tu panel.
+        Configura el color del sidebar solo para administradores.
       </p>
 
-      <div className="p-6 bg-card rounded-xl shadow border space-y-4">
-        <h2 className="text-lg font-semibold">Personalización</h2>
-        <p className="text-sm text-muted-foreground">Elige un color para el sidebar</p>
-
-        {/* Paleta */}
+      <div className="p-6 bg-card text-card-foreground rounded-xl shadow border border-border space-y-4">
+        {/* Presets */}
         <div className="flex flex-wrap gap-4">
           {presetColors.map((opt) => (
             <button
               key={opt.value}
-              onClick={() => setColor(opt.value)}
+              onClick={() => setColorValue(opt.value)}
               className={`relative w-10 h-10 rounded-full border ${
                 color === opt.value ? 'ring-2 ring-primary' : 'border-border'
               }`}
@@ -171,10 +184,8 @@ export default function CustomerSettingsPage() {
             <input
               type="color"
               value={customColor}
-              onChange={(e) => {
-                setCustomColor(e.target.value)
-                setColor('custom')
-              }}
+              onChange={(e) => setCustomColor(e.target.value)}
+              onClick={() => setColorValue('custom')}
               className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
             />
             <div
@@ -191,7 +202,7 @@ export default function CustomerSettingsPage() {
           </div>
         </div>
 
-        {/* Ajuste luminosidad con preview */}
+        {/* Luminosidad */}
         <div className="mt-4 flex items-center gap-4">
           <div className="flex-1">
             <label className="block text-sm font-medium text-foreground">Ajustar luminosidad</label>
