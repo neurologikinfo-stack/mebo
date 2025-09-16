@@ -17,10 +17,10 @@ const presetColors = [
   { label: 'Púrpura', value: 'preset:purpura', hex: '#9333ea' },
   { label: 'Rosa', value: 'preset:rosa', hex: '#db2777' },
   { label: 'Negro', value: 'preset:negro', hex: '#000000' },
-  { label: 'Blanco', value: 'preset:blanco', hex: '#ffffff' }, // 👈 actualizado
+  { label: 'Blanco', value: 'preset:blanco', hex: '#ffffff' },
 ]
 
-// 🔹 Función para aclarar u oscurecer colores (percent puede ser -30 a +30)
+// 🔹 Función para aclarar u oscurecer colores
 function adjustColor(hex, percent) {
   hex = hex.replace(/^#/, '')
   const num = parseInt(hex, 16)
@@ -38,7 +38,7 @@ function adjustColor(hex, percent) {
 const roles = ['admin', 'owner', 'customer']
 
 export default function SettingsPage() {
-  const { setColor } = useSidebarColor() // 👈 actualizar Sidebar en vivo
+  const { setColor } = useSidebarColor()
 
   const [colors, setColors] = useState({
     admin: 'preset:azul',
@@ -83,15 +83,19 @@ export default function SettingsPage() {
 
   // 🔹 Guardar color
   async function handleSave(role) {
-    let value =
-      colors[role] === 'custom' ? adjustColor(customColors[role], adjustments[role]) : colors[role]
+    let base =
+      colors[role] === 'custom'
+        ? customColors[role]
+        : presetColors.find((c) => c.value === colors[role])?.hex
+
+    let value = adjustColor(base, adjustments[role])
 
     const { error } = await supabase
       .from('settings')
       .upsert({ role, value }, { onConflict: 'role' })
 
     if (!error) {
-      setColor(value) // 👈 actualiza el Sidebar al instante
+      setColor(value)
       alert(`✅ Color del sidebar para ${role} actualizado`)
     }
   }
@@ -169,29 +173,25 @@ export default function SettingsPage() {
             </div>
           </div>
 
-          {/* 🔹 Ajustes de luminosidad */}
-          {colors[role] === 'custom' && (
-            <div className="mt-4">
-              <label className="block text-sm font-medium text-foreground">
-                Ajustar luminosidad
-              </label>
-              <input
-                type="range"
-                min={-50}
-                max={50}
-                step={10}
-                value={adjustments[role]}
-                onChange={(e) =>
-                  setAdjustments((prev) => ({
-                    ...prev,
-                    [role]: parseInt(e.target.value, 10),
-                  }))
-                }
-                className="w-full"
-              />
-              <p className="text-xs text-muted-foreground">{adjustments[role]}%</p>
-            </div>
-          )}
+          {/* 🔹 Ajustes de luminosidad (siempre visible) */}
+          <div className="mt-4">
+            <label className="block text-sm font-medium text-foreground">Ajustar luminosidad</label>
+            <input
+              type="range"
+              min={-50}
+              max={50}
+              step={10}
+              value={adjustments[role]}
+              onChange={(e) =>
+                setAdjustments((prev) => ({
+                  ...prev,
+                  [role]: parseInt(e.target.value, 10),
+                }))
+              }
+              className="w-full"
+            />
+            <p className="text-xs text-muted-foreground">{adjustments[role]}%</p>
+          </div>
 
           <button
             onClick={() => handleSave(role)}
