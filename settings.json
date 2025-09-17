@@ -19,18 +19,15 @@
     "javascript": "javascript",
     "javascriptreact": "javascriptreact",
     "typescript": "typescript",
-    "typescriptreact": "typescriptreact"
+    "typescriptreact": "typescriptreact",
+    "css": "tailwindcss",
+    "postcss": "tailwindcss"
   },
   "tailwindCSS.experimental.configFile": "./tailwind.config.js",
 
   // ==== ESLINT ====
   "eslint.enable": true,
-  "eslint.validate": [
-    "javascript",
-    "javascriptreact",
-    "typescript",
-    "typescriptreact"
-  ],
+  "eslint.validate": ["javascript", "javascriptreact", "typescript", "typescriptreact"],
 
   // ==== PRETTIER ====
   "prettier.singleQuote": true,
