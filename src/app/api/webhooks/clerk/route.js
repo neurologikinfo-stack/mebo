@@ -32,6 +32,7 @@ export async function POST(req) {
     const email = data.email_addresses?.[0]?.email_address || null
     const fullName = [data.first_name, data.last_name].filter(Boolean).join(' ')
     const clerkId = data.id
+    const avatarUrl = data.image_url || null
 
     // 🚫 Ignorar sesiones o emails (ej: sess_..., ema_...)
     if (!clerkId.startsWith('user_')) {
@@ -39,7 +40,7 @@ export async function POST(req) {
       return NextResponse.json({ ok: true, skipped: true })
     }
 
-    // 🔹 Nueva lógica de roles
+    // 🔹 Rol inicial
     let role = data.public_metadata?.role || null
 
     // Admins por correo
@@ -56,17 +57,23 @@ export async function POST(req) {
     console.log(`👤 Webhook ${type}:`, { email, role, clerkId })
 
     // ==============================
-    // Insertar/actualizar en profiles
+    // Insertar/actualizar en profiles (Supabase = master)
     // ==============================
-    await supabase.from('profiles').upsert(
+    const { error: profileError } = await supabase.from('profiles').upsert(
       {
         clerk_id: clerkId,
         email,
         full_name: fullName,
         role,
+        avatar_url: avatarUrl, // 👈 sincroniza foto
+        updated_at: new Date().toISOString(),
       },
       { onConflict: 'clerk_id' }
     )
+
+    if (profileError) {
+      console.error('❌ Error actualizando perfil en Supabase:', profileError)
+    }
 
     // ==============================
     // Si es Owner, actualizar estado en owners
@@ -77,10 +84,10 @@ export async function POST(req) {
         .update({
           clerk_id: clerkId,
           full_name: fullName,
-          status: 'active', // 👈 ahora ya está activo
+          status: 'active',
         })
-        .eq('email', email) // 👈 busca por email
-        .is('clerk_id', null) // 👈 solo si estaba vacío (pendiente)
+        .eq('email', email)
+        .is('clerk_id', null)
 
       if (error) {
         console.error('❌ Error actualizando owner en Supabase:', error)

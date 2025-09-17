@@ -138,3 +138,79 @@
   border: 1px solid hsl(var(--ring)) !important;
   border-radius: 0.5rem !important;
 }
+
+/* ======================= */
+/* 🔹 Clerk UserProfile overrides */
+/* ======================= */
+
+.cl-card {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+.cl-profileSection {
+  border-bottom: 1px solid hsl(var(--border)) !important;
+  padding: 1.5rem 0 !important;
+}
+.cl-profileSection:last-of-type {
+  border-bottom: none !important;
+}
+
+.cl-profileSectionTitle {
+  font-size: 1.125rem !important;
+  font-weight: 600 !important;
+  margin-bottom: 0.75rem !important;
+  padding-left: 1rem !important;
+}
+
+.cl-profileSectionContent {
+  padding-left: 1rem !important;
+  gap: 1.25rem !important;
+}
+
+.cl-formFieldLabel {
+  font-size: 1rem !important;
+  font-weight: 500 !important;
+  color: hsl(var(--muted-foreground)) !important;
+  padding-left: 1rem !important;
+}
+
+.cl-formFieldInput {
+  border-radius: var(--radius) !important;
+  border: 1px solid hsl(var(--input)) !important;
+  background: hsl(var(--background)) !important;
+  padding: 0.75rem 1rem !important;
+  font-size: 1rem !important;
+  color: hsl(var(--foreground)) !important;
+}
+
+.cl-formButtonPrimary {
+  background: hsl(var(--primary)) !important;
+  color: hsl(var(--primary-foreground)) !important;
+  border-radius: var(--radius) !important;
+  padding: 0.625rem 1.25rem !important;
+  font-weight: 600 !important;
+  font-size: 0.95rem !important;
+}
+.cl-formButtonPrimary:hover {
+  opacity: 0.9 !important;
+}
+
+.cl-formFieldAction {
+  color: hsl(var(--primary)) !important;
+  font-size: 0.875rem !important;
+  font-weight: 500 !important;
+  text-decoration: none !important;
+}
+.cl-formFieldAction:hover {
+  text-decoration: underline !important;
+}
+
+.cl-formFieldHint {
+  font-size: 0.875rem !important;
+  color: hsl(var(--muted-foreground)) !important;
+  padding-left: 1rem !important;
+}

@@ -4,7 +4,7 @@ import { clerkClient } from '@clerk/nextjs/server'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY // 👈 service_role (ignora RLS)
+  process.env.SUPABASE_SERVICE_ROLE_KEY // ✅ service_role (ignora RLS)
 )
 
 export async function POST(req) {
@@ -32,46 +32,42 @@ export async function POST(req) {
       data: { publicUrl },
     } = supabase.storage.from('avatars').getPublicUrl(filePath)
 
-    // 3️⃣ Guardar en profiles (Supabase)
+    // 3️⃣ Guardar en profiles (Supabase = master)
     const { error: profileError } = await supabase
       .from('profiles')
       .update({
         avatar_url: publicUrl,
         full_name,
         phone,
+        updated_at: new Date().toISOString(),
       })
       .eq('clerk_id', clerk_id)
 
     if (profileError) throw profileError
 
-    // 4️⃣ Sincronizar en Clerk
+    // 4️⃣ Clerk (sincronizar avatar/nombre para UserButton)
     try {
-      console.log('👉 Enviando a Clerk:', { clerk_id, full_name, phone, imageUrl: publicUrl })
-
       const [firstName, ...rest] = (full_name || '').split(' ')
-      const lastName = rest.join(' ') || '.'
+      const lastName = rest.join(' ') || null
 
-      const updated = await clerkClient.users.updateUser(clerk_id, {
-        firstName: firstName || null,
-        lastName: lastName || null,
-        imageUrl: publicUrl || null,
-        publicMetadata: {
-          phone: phone || null,
-        },
-      })
+      const finalImageUrl = publicUrl // 👈 siempre aseguramos URL válida
 
-      console.log('✅ Clerk actualizado:', {
-        id: updated.id,
-        firstName: updated.firstName,
-        lastName: updated.lastName,
-        imageUrl: updated.imageUrl,
-        phone: updated.publicMetadata?.phone,
-      })
+      if (finalImageUrl) {
+        await clerkClient.users.updateUser(clerk_id, {
+          firstName: firstName || null,
+          lastName,
+          imageUrl: finalImageUrl,
+        })
+
+        console.log('ℹ️ Clerk sincronizado con avatar:', finalImageUrl)
+      } else {
+        console.warn('⚠️ No se generó publicUrl para avatar, Clerk no actualizado')
+      }
     } catch (clerkErr) {
-      console.error('❌ Error actualizando en Clerk:', JSON.stringify(clerkErr, null, 2))
+      console.warn('⚠️ Clerk no se actualizó, pero Supabase sí:', clerkErr.message)
     }
 
-    // 5️⃣ Responder al frontend
+    // 5️⃣ Respuesta al frontend (consistente con PATCH)
     return NextResponse.json({ ok: true, url: publicUrl, path: filePath })
   } catch (err) {
     console.error('❌ Error en upload-avatar:', err)

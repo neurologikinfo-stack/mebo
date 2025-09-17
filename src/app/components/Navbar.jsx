@@ -143,7 +143,11 @@ export default function Navbar() {
               </Link>
             )}
             <div className="w-8 h-8 flex items-center justify-center">
-              <UserButton afterSignOutUrl="/" userProfileMode="navigation" />
+              <UserButton
+                afterSignOutUrl="/"
+                userProfileUrl="/account" // 👈 ahora abre tu /account
+                userProfileMode="navigation"
+              />
             </div>
           </SignedIn>
         </div>
@@ -203,7 +207,11 @@ export default function Navbar() {
                 </Link>
               )}
               <div className="mt-2 w-8 h-8 flex items-center justify-center">
-                <UserButton afterSignOutUrl="/" userProfileMode="navigation" />
+                <UserButton
+                  afterSignOutUrl="/"
+                  userProfileUrl="/account" // 👈 en mobile también
+                  userProfileMode="navigation"
+                />
               </div>
             </SignedIn>
 

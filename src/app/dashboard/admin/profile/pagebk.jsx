@@ -20,14 +20,14 @@ export default function AdminProfilePage() {
   const [uploading, setUploading] = useState(false)
   const [message, setMessage] = useState('')
 
-  // 🔹 Inicializar datos desde Supabase + Clerk
+  // 🔹 Inicializar datos desde DB + Clerk
   useEffect(() => {
     if (dbUser) {
       setForm({
-        full_name: dbUser.full_name || user?.fullName || '',
-        email: dbUser.email || user?.primaryEmailAddress?.emailAddress || '',
+        full_name: dbUser.full_name || user.fullName || '',
+        email: dbUser.email || user.primaryEmailAddress?.emailAddress || '',
         phone: dbUser.phone || '',
-        avatar_url: dbUser.avatar_url || user?.imageUrl || '',
+        avatar_url: dbUser.avatar_url || user.imageUrl || '',
         role: dbUser.role || 'admin',
       })
     }
@@ -43,8 +43,8 @@ export default function AdminProfilePage() {
       const formData = new FormData()
       formData.append('file', file)
       formData.append('clerk_id', clerk_id)
-      formData.append('full_name', form.full_name)
-      formData.append('phone', form.phone)
+      formData.append('full_name', form.full_name) // 👈 importante
+      formData.append('phone', form.phone) // 👈 importante
 
       const res = await fetch('/api/upload-avatar', {
         method: 'POST',
@@ -54,9 +54,9 @@ export default function AdminProfilePage() {
       if (!res.ok || !result.ok) throw new Error(result.error)
 
       setForm((prev) => ({ ...prev, avatar_url: result.url }))
-      setMessage('✅ Avatar actualizado')
+      setMessage('✅ Avatar actualizado en Supabase y Clerk')
 
-      // 🔄 Refrescar Clerk (para que cambie el UserButton en Navbar)
+      // 🔄 Refrescar Clerk
       await user?.reload()
     } catch (err) {
       setMessage('❌ ' + err.message)
@@ -72,14 +72,12 @@ export default function AdminProfilePage() {
     if (!clerk_id) return
 
     try {
-      const res = await saveUser({
-        ...form,
-        avatar_url: form.avatar_url || user?.imageUrl || null,
-      })
-
+      const res = await saveUser(form)
       if (!res.ok) throw new Error(res.error || 'No se pudo actualizar')
 
       setMessage('✅ Perfil actualizado correctamente')
+
+      // 🔄 Refrescar Clerk
       await user?.reload()
     } catch (err) {
       setMessage('❌ ' + err.message)
@@ -88,11 +86,9 @@ export default function AdminProfilePage() {
     }
   }
 
-  // 🔹 Estados de carga
   if (!clerk_id) return <p className="p-6">⚠️ No autenticado</p>
   if (loading) return <p className="p-6">⏳ Cargando...</p>
   if (error) return <p className="p-6 text-red-500">❌ {error}</p>
-  if (!dbUser) return <p className="p-6 text-yellow-600">✨ Creando perfil...</p>
 
   return (
     <div className="space-y-8 max-w-lg mx-auto">

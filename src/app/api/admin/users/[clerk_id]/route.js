@@ -4,10 +4,10 @@ import { clerkClient } from '@clerk/nextjs/server'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY // ✅ Service role (bypassa RLS)
+  process.env.SUPABASE_SERVICE_ROLE_KEY // ✅ Service role (ignora RLS)
 )
 
-// 🔹 GET: obtener un perfil
+// 🔹 GET: obtener un perfil desde Supabase (si no existe, lo crea)
 export async function GET(req, { params }) {
   try {
     if (!params?.clerk_id) {
@@ -16,23 +16,49 @@ export async function GET(req, { params }) {
 
     const decodedClerkId = decodeURIComponent(params.clerk_id)
 
-    const { data, error } = await supabase.rpc('admin_get_profile', {
-      clerk_id_input: decodedClerkId,
-    })
+    // Buscar en Supabase (tabla profiles)
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('id, clerk_id, email, full_name, phone, avatar_url, role, created_at, updated_at')
+      .eq('clerk_id', decodedClerkId)
+      .maybeSingle()
 
     if (error) throw error
+
+    // ✅ Si no existe el perfil, lo creamos automáticamente
     if (!data) {
-      return NextResponse.json({ ok: false, error: 'Usuario no encontrado' }, { status: 404 })
+      const clerkUser = await clerkClient.users.getUser(decodedClerkId)
+
+      const newProfile = {
+        clerk_id: decodedClerkId,
+        email: clerkUser.primaryEmailAddress?.emailAddress || null,
+        full_name: clerkUser.fullName || '',
+        phone: clerkUser.phoneNumbers?.[0]?.phoneNumber || '',
+        avatar_url: clerkUser.imageUrl || null,
+        role: 'admin', // 👈 default (puedes cambiarlo)
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      }
+
+      const { data: inserted, error: insertErr } = await supabase
+        .from('profiles')
+        .insert(newProfile)
+        .select()
+        .maybeSingle()
+
+      if (insertErr) throw insertErr
+
+      return NextResponse.json({ ok: true, data: inserted })
     }
 
     return NextResponse.json({ ok: true, data })
   } catch (err) {
-    console.error('❌ Error en GET /api/admin/users/[clerk_id]:', err.message)
+    console.error('❌ Error en GET perfil:', err)
     return NextResponse.json({ ok: false, error: err.message || 'Error interno' }, { status: 500 })
   }
 }
 
-// 🔹 PATCH: actualizar un perfil en Supabase + Clerk
+// 🔹 PATCH: actualizar un perfil en Supabase y sincronizar con Clerk
 export async function PATCH(req, { params }) {
   try {
     if (!params?.clerk_id) {
@@ -42,73 +68,90 @@ export async function PATCH(req, { params }) {
     const decodedClerkId = decodeURIComponent(params.clerk_id)
     const updates = await req.json()
 
-    let profileData = null
+    // --- 1. Verificar si existe
+    const { data: existing, error: fetchErr } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('clerk_id', decodedClerkId)
+      .maybeSingle()
 
-    // --- 1. Actualizar datos del perfil en Supabase
-    if (updates.full_name || updates.email || updates.role || updates.phone || updates.avatar_url) {
-      const { data, error } = await supabase.rpc('admin_update_profile', {
-        clerk_id_input: decodedClerkId,
-        updates,
-      })
-      if (error) throw error
-      profileData = data
-    }
+    if (fetchErr) throw fetchErr
 
-    // --- 2. Actualizar permisos en Supabase
-    if (Array.isArray(updates.permissions)) {
-      const { data: user, error: userError } = await supabase
+    let profileData = existing
+
+    // --- 2. Si no existe, lo creamos
+    if (!existing) {
+      const clerkUser = await clerkClient.users.getUser(decodedClerkId)
+
+      const newProfile = {
+        clerk_id: decodedClerkId,
+        email: clerkUser.primaryEmailAddress?.emailAddress || null,
+        full_name: updates.full_name || clerkUser.fullName || '',
+        phone: updates.phone || clerkUser.phoneNumbers?.[0]?.phoneNumber || '',
+        avatar_url: updates.avatar_url || clerkUser.imageUrl || null,
+        role: updates.role || 'admin',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      }
+
+      const { data: inserted, error: insertErr } = await supabase
         .from('profiles')
-        .select('id')
-        .eq('clerk_id', decodedClerkId)
+        .insert(newProfile)
+        .select()
         .maybeSingle()
 
-      if (userError) throw userError
-      if (!user) {
-        return NextResponse.json({ ok: false, error: 'Usuario no encontrado' }, { status: 404 })
-      }
-
-      const { error: delError } = await supabase
-        .from('user_permissions')
-        .delete()
-        .eq('profile_id', user.id)
-      if (delError) throw delError
-
-      const { data: perms, error: permError } = await supabase
-        .from('permissions')
-        .select('id, name')
-        .in('name', updates.permissions)
-
-      if (permError) throw permError
-
-      const rows = perms.map((p) => ({
-        profile_id: user.id,
-        permission_id: p.id,
-      }))
-
-      if (rows.length > 0) {
-        const { error: insertError } = await supabase.from('user_permissions').insert(rows)
-        if (insertError) throw insertError
-      }
+      if (insertErr) throw insertErr
+      profileData = inserted
     }
 
-    // --- 3. Sincronizar también en Clerk
-    try {
-      await clerkClient.users.updateUser(decodedClerkId, {
-        firstName: updates.full_name,
-        lastName: '.',
-        imageUrl: updates.avatar_url,
-        publicMetadata: {
-          phone: updates.phone || null,
-          role: updates.role || null,
-        },
+    // --- 3. Actualizar en Supabase
+    const { data, error } = await supabase
+      .from('profiles')
+      .update({
+        full_name: updates.full_name ?? profileData.full_name,
+        phone: updates.phone ?? profileData.phone,
+        avatar_url: updates.avatar_url ?? profileData.avatar_url,
+        role: updates.role ?? profileData.role,
+        updated_at: new Date().toISOString(),
       })
-    } catch (clerkErr) {
-      console.warn('⚠️ Error actualizando en Clerk:', clerkErr.message)
+      .eq('clerk_id', decodedClerkId)
+      .select()
+      .maybeSingle()
+
+    if (error) throw error
+    if (!data) {
+      return NextResponse.json(
+        { ok: false, error: 'Usuario no encontrado ni creado' },
+        { status: 404 }
+      )
     }
 
-    return NextResponse.json({ ok: true, data: profileData })
+    // --- 4. Sincronizar con Clerk
+    try {
+      const currentClerkUser = await clerkClient.users.getUser(decodedClerkId)
+
+      const fullNameForClerk =
+        updates.full_name || data.full_name || currentClerkUser.fullName || ''
+      const [firstName, ...rest] = fullNameForClerk.split(' ')
+      const lastName = rest.join(' ') || null
+
+      const finalImageUrl =
+        updates.avatar_url || data.avatar_url || currentClerkUser.imageUrl || null
+
+      if (firstName || lastName || finalImageUrl) {
+        await clerkClient.users.updateUser(decodedClerkId, {
+          firstName: firstName || null,
+          lastName,
+          imageUrl: finalImageUrl,
+        })
+      }
+    } catch (clerkErr) {
+      console.warn('⚠️ Clerk no se actualizó, pero Supabase sí:', clerkErr.message)
+    }
+
+    return NextResponse.json({ ok: true, data })
   } catch (err) {
-    console.error('❌ Error en PATCH /api/admin/users/[clerk_id]:', err.message)
+    console.error('❌ Error en PATCH perfil:', err)
     return NextResponse.json({ ok: false, error: err.message || 'Error interno' }, { status: 500 })
   }
 }
