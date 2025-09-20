@@ -8,13 +8,16 @@ const supabase = createClient(
 )
 
 // 🔹 GET: obtener un perfil desde Supabase (si no existe, lo crea)
-export async function GET(req, { params }) {
+export async function GET(req, context) {
   try {
-    if (!params?.clerk_id) {
+    const { params } = await context
+    const clerkId = params?.clerk_id
+
+    if (!clerkId) {
       return NextResponse.json({ ok: false, error: 'Falta clerk_id' }, { status: 400 })
     }
 
-    const decodedClerkId = decodeURIComponent(params.clerk_id)
+    const decodedClerkId = decodeURIComponent(clerkId)
 
     // Buscar en Supabase (tabla profiles)
     const { data, error } = await supabase
@@ -59,13 +62,16 @@ export async function GET(req, { params }) {
 }
 
 // 🔹 PATCH: actualizar un perfil en Supabase y sincronizar con Clerk
-export async function PATCH(req, { params }) {
+export async function PATCH(req, context) {
   try {
-    if (!params?.clerk_id) {
+    const { params } = await context
+    const clerkId = params?.clerk_id
+
+    if (!clerkId) {
       return NextResponse.json({ ok: false, error: 'Falta clerk_id' }, { status: 400 })
     }
 
-    const decodedClerkId = decodeURIComponent(params.clerk_id)
+    const decodedClerkId = decodeURIComponent(clerkId)
     const updates = await req.json()
 
     // --- 1. Verificar si existe

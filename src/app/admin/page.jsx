@@ -1,6 +1,6 @@
 'use client'
 import { useState } from 'react'
-import Sidebar from '@/components/Sidebar'
+import Sidebar from '@/components/DashboardLayout'
 import { Menu, Users, Briefcase, BarChart3, LayoutDashboard } from 'lucide-react'
 
 const adminItems = [

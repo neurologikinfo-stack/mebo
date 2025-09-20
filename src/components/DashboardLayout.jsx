@@ -3,120 +3,92 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useState } from 'react'
-import { ChevronLeft, ChevronRight, LayoutDashboard } from 'lucide-react'
-import { useSidebarColor } from '@/context/SidebarColorContext'
+import { useUser } from '@clerk/nextjs'
+import {
+  LayoutDashboard,
+  Users,
+  Briefcase,
+  BarChart3,
+  Shield,
+  UserCog,
+  LockKeyhole,
+  Settings,
+  User,
+  Calendar,
+  DollarSign,
+  Home,
+  ChevronLeft,
+  ChevronRight,
+} from 'lucide-react'
 
-// 🔹 Colores predefinidos
-const presetColors = {
-  'preset:azul': { bg: '#2563eb', text: 'white' },
-  'preset:rojo': { bg: '#dc2626', text: 'white' },
-  'preset:amarillo': { bg: '#facc15', text: 'black' },
-  'preset:verde': { bg: '#16a34a', text: 'white' },
-  'preset:naranja': { bg: '#f97316', text: 'white' },
-  'preset:gris': { bg: '#1f2937', text: 'white' },
-  'preset:cian': { bg: '#06b6d4', text: 'black' },
-  'preset:purpura': { bg: '#9333ea', text: 'white' },
-  'preset:rosa': { bg: '#db2777', text: 'white' },
-  'preset:negro': { bg: '#000000', text: 'white' },
-
-  // 🔹 Especiales (respetan dark mode con clases)
-  'preset:blanco': { className: 'bg-white text-black dark:bg-gray-900 dark:text-white' },
-  'preset:oscuro': { className: 'bg-gray-900 text-white dark:bg-white dark:text-black' },
+// 🔹 Menús por rol
+const menuByRole = {
+  admin: [
+    { name: 'Dashboard', href: '/dashboard/admin', icon: LayoutDashboard },
+    { name: 'Usuarios', href: '/dashboard/admin/users', icon: Users },
+    { name: 'Roles', href: '/dashboard/admin/roles', icon: LockKeyhole },
+    { name: 'Negocios', href: '/dashboard/admin/business', icon: Briefcase },
+    { name: 'Owners', href: '/dashboard/admin/owners', icon: UserCog },
+    { name: 'Permisos', href: '/dashboard/admin/permissions', icon: Shield },
+    { name: 'Reportes', href: '/dashboard/admin/reports', icon: BarChart3 },
+    { name: 'Perfil', href: '/dashboard/admin/profile', icon: User },
+    { name: 'Configuración', href: '/dashboard/admin/settings', icon: Settings },
+  ],
+  owner: [
+    { name: 'Dashboard', href: '/dashboard/owner', icon: LayoutDashboard },
+    { name: 'Mis Negocios', href: '/dashboard/owner/businesses', icon: Home },
+    { name: 'Pagos', href: '/dashboard/owner/payments', icon: DollarSign },
+    { name: 'Perfil', href: '/dashboard/owner/profile', icon: User },
+    { name: 'Configuración', href: '/dashboard/owner/settings', icon: Settings },
+  ],
+  customer: [
+    { name: 'Dashboard', href: '/dashboard/customer', icon: LayoutDashboard },
+    { name: 'Mis Citas', href: '/dashboard/customer/appointments', icon: Calendar },
+    { name: 'Perfil', href: '/dashboard/customer/profile', icon: User },
+    { name: 'Configuración', href: '/dashboard/customer/settings', icon: Settings },
+  ],
 }
 
-// 🔹 Función para calcular contraste automático (para hex personalizados)
-function getContrastYIQ(hexcolor) {
-  if (!hexcolor) return 'white'
-  let c = hexcolor.replace('#', '')
-  if (c.length === 3) {
-    c = c
-      .split('')
-      .map((ch) => ch + ch)
-      .join('')
-  }
-  const r = parseInt(c.substr(0, 2), 16)
-  const g = parseInt(c.substr(2, 2), 16)
-  const b = parseInt(c.substr(4, 2), 16)
-  const yiq = (r * 299 + g * 587 + b * 114) / 1000
-  return yiq >= 128 ? 'black' : 'white'
-}
-
-export default function DashboardLayout({ title, menuItems = [], children }) {
+export default function DashboardLayout({ title, children }) {
   const pathname = usePathname()
   const [collapsed, setCollapsed] = useState(false)
-  const { color } = useSidebarColor()
+  const { user } = useUser()
+  const role = (user?.publicMetadata?.role || 'customer').toLowerCase()
 
-  // 🔹 Determinar estilos
-  let bgColor,
-    textColor,
-    extraClass = ''
-
-  if (presetColors[color]) {
-    if (presetColors[color].bg) {
-      bgColor = presetColors[color].bg
-      textColor = presetColors[color].text
-    }
-    if (presetColors[color].className) {
-      extraClass = presetColors[color].className
-    }
-  } else if (color?.startsWith('#')) {
-    bgColor = color
-    textColor = getContrastYIQ(color)
-  } else {
-    bgColor = '#1f2937'
-    textColor = 'white'
-  }
-
-  // 🔹 Hover/active dinámico según contraste
-  const hoverBg =
-    textColor === 'white'
-      ? 'rgba(255,255,255,0.2)' // fondos oscuros
-      : 'rgba(0,0,0,0.1)' // fondos claros
+  const menuItems = menuByRole[role] || []
 
   return (
     <div className="flex min-h-screen bg-background text-foreground">
       {/* Sidebar */}
       <aside
-        className={`${
-          collapsed ? 'w-20' : 'w-64'
-        } h-screen fixed left-0 top-0 shadow-sm transition-all duration-300 ${extraClass}`}
-        style={{
-          backgroundColor: extraClass ? undefined : bgColor,
-          color: extraClass ? undefined : textColor,
-        }}
+        className={`
+          ${collapsed ? 'w-20' : 'w-64'}
+          h-screen fixed left-0 top-0 shadow-sm transition-all duration-300
+          bg-primary text-primary-foreground
+        `}
       >
-        {/* Header sidebar */}
         <div className="flex items-center justify-between p-4 border-b border-border">
           {!collapsed && <h2 className="text-lg font-bold">{title}</h2>}
           <button
-            className="p-2 rounded"
-            style={extraClass ? {} : { color: textColor }}
+            className="p-2 rounded hover:bg-primary/20"
             onClick={() => setCollapsed(!collapsed)}
           >
             {collapsed ? <ChevronRight className="h-5 w-5" /> : <ChevronLeft className="h-5 w-5" />}
           </button>
         </div>
 
-        {/* Links del menú */}
         <nav className="py-4 space-y-1">
           {menuItems.map((item) => {
             const active = pathname === item.href
-            const Icon = item.icon || LayoutDashboard
+            const Icon = item.icon
             return (
               <Link
                 key={item.href}
                 href={item.href}
-                className="flex items-center gap-3 rounded-md py-2 pl-4 pr-2 text-sm font-medium"
-                style={{
-                  color: extraClass ? undefined : textColor,
-                  backgroundColor: active ? hoverBg : 'transparent',
-                }}
-                onMouseEnter={(e) => {
-                  if (!active) e.currentTarget.style.backgroundColor = hoverBg
-                }}
-                onMouseLeave={(e) => {
-                  if (!active) e.currentTarget.style.backgroundColor = 'transparent'
-                }}
+                className={`
+                  flex items-center gap-3 rounded-md py-2 pl-4 pr-2 text-sm font-medium transition
+                  ${active ? 'bg-black/20' : 'hover:bg-black/10'}
+                `}
               >
                 <Icon className="h-5 w-5 flex-shrink-0" />
                 {!collapsed && <span>{item.name}</span>}
@@ -131,14 +103,12 @@ export default function DashboardLayout({ title, menuItems = [], children }) {
         className="flex flex-col flex-1 transition-all duration-300"
         style={{ marginLeft: collapsed ? 80 : 256 }}
       >
-        {/* Header superior */}
         <header className="sticky top-0 z-20 w-full bg-card border-b border-border shadow-sm">
           <div className="flex items-center justify-between px-4 py-3">
             <h1 className="text-lg font-semibold">{title}</h1>
           </div>
         </header>
 
-        {/* Contenido principal */}
         <main className="flex-1 p-6">{children}</main>
       </div>
     </div>

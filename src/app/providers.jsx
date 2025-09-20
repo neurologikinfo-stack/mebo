@@ -4,12 +4,17 @@ import { ClerkProvider, useUser } from '@clerk/nextjs'
 import { useEffect, useState } from 'react'
 import { SidebarColorProvider } from '@/context/SidebarColorContext'
 
-// Wrapper que obtiene el rol del usuario y lo pasa al provider
+// Wrapper que obtiene clerkId y rol del usuario y los pasa al provider
 function SidebarProviderWrapper({ children }) {
   const { user } = useUser()
   const role = (user?.publicMetadata?.role || 'customer').toLowerCase()
+  const clerkId = user?.id
 
-  return <SidebarColorProvider role={role}>{children}</SidebarColorProvider>
+  return (
+    <SidebarColorProvider clerkId={clerkId} role={role}>
+      {children}
+    </SidebarColorProvider>
+  )
 }
 
 export default function Providers({ children }) {

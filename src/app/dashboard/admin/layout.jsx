@@ -1,6 +1,6 @@
 'use client'
 
-import DashboardLayout from '@/components/Sidebar'
+import DashboardLayout from '@/components/DashboardLayout'
 import { SidebarColorProvider } from '@/context/SidebarColorContext'
 import {
   LayoutDashboard,

@@ -1,8 +1,9 @@
 'use client'
+
 import { createContext, useContext, useState, useEffect } from 'react'
 import { supabase } from '@/utils/supabase/client'
 
-// 🔹 Paleta de presets a HEX
+// 🔹 Presets
 const presetColors = {
   'preset:azul': '#2563eb',
   'preset:rojo': '#dc2626',
@@ -17,9 +18,16 @@ const presetColors = {
   'preset:blanco': '#ffffff',
 }
 
-const SidebarColorContext = createContext(undefined)
+// 🔹 Helpers
+function hexToRgbString(hex) {
+  if (!hex || !hex.startsWith('#')) return hex
+  const bigint = parseInt(hex.slice(1), 16)
+  const r = (bigint >> 16) & 255
+  const g = (bigint >> 8) & 255
+  const b = bigint & 255
+  return `${r} ${g} ${b}`
+}
 
-// 🔹 utilidades
 function hexToRgb(hex) {
   const bigint = parseInt(hex.slice(1), 16)
   return {
@@ -29,43 +37,59 @@ function hexToRgb(hex) {
   }
 }
 
-function getContrastYIQ(hex) {
-  const { r, g, b } = hexToRgb(hex)
+function getContrastYIQ(hexOrRgb) {
+  let r, g, b
+  if (hexOrRgb.includes(' ')) {
+    const parts = hexOrRgb.split(' ').map(Number)
+    ;[r, g, b] = parts
+  } else {
+    const { r: rr, g: gg, b: bb } = hexToRgb(hexOrRgb)
+    r = rr
+    g = gg
+    b = bb
+  }
   const yiq = (r * 299 + g * 587 + b * 114) / 1000
   return yiq >= 128 ? '0 0 0' : '255 255 255'
 }
 
+const SidebarColorContext = createContext(undefined)
+
 export function SidebarColorProvider({ role, children }) {
-  const [color, setColor] = useState(null) // 👈 null al inicio
+  const [color, setColor] = useState(null)
   const [loading, setLoading] = useState(true)
 
   function applyBrandColor(value) {
-    let hex = ''
+    if (!value) return
 
-    if (value?.startsWith('#')) {
-      hex = value
+    let rgb
+    if (value.startsWith('#')) {
+      rgb = hexToRgbString(value)
     } else if (presetColors[value]) {
-      hex = presetColors[value]
+      rgb = hexToRgbString(presetColors[value])
+    } else {
+      rgb = value
     }
 
-    if (hex) {
-      const { r, g, b } = hexToRgb(hex)
-      const contrast = getContrastYIQ(hex)
+    const contrast = getContrastYIQ(rgb)
 
-      document.documentElement.style.setProperty('--primary', `${r} ${g} ${b}`)
-      document.documentElement.style.setProperty('--primary-foreground', contrast)
-    }
+    // 👇 Debug temporal
+    console.log('🎨 Aplicando color Sidebar:', {
+      input: value,
+      rgb,
+      contrast,
+    })
+
+    document.documentElement.style.setProperty('--primary', rgb)
+    document.documentElement.style.setProperty('--primary-foreground', contrast)
   }
 
   useEffect(() => {
-    // 1️⃣ Intentar leer de localStorage primero
     const stored = localStorage.getItem(`sidebar-color-${role}`)
     if (stored) {
       setColor(stored)
       applyBrandColor(stored)
     }
 
-    // 2️⃣ Traer de Supabase
     async function fetchColor() {
       const { data } = await supabase
         .from('settings')
@@ -76,14 +100,13 @@ export function SidebarColorProvider({ role, children }) {
       if (data?.value) {
         setColor(data.value)
         applyBrandColor(data.value)
-        localStorage.setItem(`sidebar-color-${role}`, data.value) // guardar cache
+        localStorage.setItem(`sidebar-color-${role}`, data.value)
       }
       setLoading(false)
     }
 
     fetchColor()
 
-    // 3️⃣ Escuchar cambios en realtime
     const channel = supabase
       .channel('settings-changes')
       .on(
@@ -104,7 +127,6 @@ export function SidebarColorProvider({ role, children }) {
     }
   }, [role])
 
-  // 4️⃣ Si no hay color cargado todavía → renderizamos un estado neutro
   if (loading && !color) {
     return (
       <div className="w-full h-screen bg-background flex items-center justify-center">
@@ -114,7 +136,16 @@ export function SidebarColorProvider({ role, children }) {
   }
 
   return (
-    <SidebarColorContext.Provider value={{ color, setColor }}>
+    <SidebarColorContext.Provider
+      value={{
+        color,
+        setColor: (value) => {
+          setColor(value)
+          applyBrandColor(value)
+          localStorage.setItem(`sidebar-color-${role}`, value)
+        },
+      }}
+    >
       {children}
     </SidebarColorContext.Provider>
   )

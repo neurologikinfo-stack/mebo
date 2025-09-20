@@ -1,8 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { supabase } from '@/utils/supabase/client'
 import { useSidebarColor } from '@/context/SidebarColorContext'
+import { useUser } from '@clerk/nextjs'
 import { Check } from 'lucide-react'
 
 const presetColors = [
@@ -19,7 +19,7 @@ const presetColors = [
   { label: 'Blanco', value: 'preset:blanco', hex: '#ffffff' },
 ]
 
-// --- Utils HEX <-> HSL ---
+// --- Utils
 function hexToHsl(hex) {
   hex = hex.replace(/^#/, '')
   const r = parseInt(hex.substring(0, 2), 16) / 255
@@ -84,82 +84,98 @@ function adjustColor(hex, percent, minL = 0.1, maxL = 0.9) {
   return hslToHex(h, s, newL)
 }
 
+function hexToRgbString(hex) {
+  const bigint = parseInt(hex.slice(1), 16)
+  const r = (bigint >> 16) & 255
+  const g = (bigint >> 8) & 255
+  const b = bigint & 255
+  return `${r} ${g} ${b}`
+}
+
 export default function AdminSettingsPage() {
   const { setColor } = useSidebarColor()
-  const role = 'admin'
+  const { user } = useUser()
+
+  const clerkId = user?.id
+  const role = user?.publicMetadata?.role || 'customer'
 
   const [color, setColorValue] = useState('preset:azul')
   const [customColor, setCustomColor] = useState('#2563eb')
   const [adjustment, setAdjustment] = useState(0)
   const [range, setRange] = useState({ min: 0.1, max: 0.9 })
 
-  // --- Load from DB ---
+  // --- Load from DB
   useEffect(() => {
+    if (!clerkId) return
     async function fetchColor() {
-      const { data, error } = await supabase
-        .from('settings')
-        .select('value, min_luminosity, max_luminosity')
-        .eq('role', role)
-        .maybeSingle()
+      try {
+        const res = await fetch(`/api/settings/fetch?clerk_id=${clerkId}`)
+        const data = await res.json()
 
-      if (!error && data) {
-        if (data.value.startsWith('#')) {
-          setColorValue('custom')
-          setCustomColor(data.value)
-        } else {
-          setColorValue(data.value)
+        if (data.value) {
+          let base = data.value
+          if (!base.startsWith('#')) {
+            const preset = presetColors.find((c) => c.value === base)
+            base = preset?.hex || '#2563eb'
+            setColorValue(data.value)
+          } else {
+            setColorValue('custom')
+            setCustomColor(base)
+          }
+
+          setRange({
+            min: data.min_luminosity || 0.1,
+            max: data.max_luminosity || 0.9,
+          })
         }
-        setRange({
-          min: data.min_luminosity || 0.1,
-          max: data.max_luminosity || 0.9,
-        })
-      } else {
-        // First time: insert azul
-        await supabase.from('settings').insert({
-          role,
-          value: '#2563eb',
-          min_luminosity: 0.1,
-          max_luminosity: 0.9,
-        })
+      } catch (err) {
+        console.error('❌ Error leyendo color:', err)
       }
     }
     fetchColor()
-  }, [])
+  }, [clerkId])
 
-  // --- Save ---
+  // --- Base color y preview
+  const baseColor =
+    color === 'custom' ? customColor : presetColors.find((c) => c.value === color)?.hex || '#2563eb'
+  const previewColor = adjustColor(baseColor, adjustment, range.min, range.max)
+
+  // --- Aplica al sidebar en tiempo real
+  useEffect(() => {
+    setColor(hexToRgbString(previewColor))
+  }, [previewColor, setColor])
+
+  // --- Save via API (Service Role Key)
   async function handleSave() {
-    const base = color === 'custom' ? customColor : presetColors.find((c) => c.value === color)?.hex
+    try {
+      const res = await fetch('/api/settings/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          clerk_id: clerkId,
+          role,
+          value: previewColor,
+          min_luminosity: range.min,
+          max_luminosity: range.max,
+        }),
+      })
 
-    const value = adjustColor(base, adjustment, range.min, range.max)
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Error desconocido')
 
-    const { error } = await supabase.from('settings').upsert(
-      {
-        role,
-        value,
-        min_luminosity: range.min,
-        max_luminosity: range.max,
-      },
-      { onConflict: 'role' }
-    )
-
-    if (!error) {
-      setColor(value) // aplica al sidebar
-      alert('✅ Color del sidebar para admin actualizado')
+      alert('✅ Color del sidebar actualizado')
+    } catch (err) {
+      console.error('❌ Error guardando color:', err)
+      alert('❌ No se pudo guardar el color. Revisa la consola.')
     }
   }
 
-  const base = color === 'custom' ? customColor : presetColors.find((c) => c.value === color)?.hex
-  const previewColor = adjustColor(base, adjustment, range.min, range.max)
-
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-foreground">Personalización Admin</h1>
-      <p className="text-muted-foreground">
-        Configura el color del sidebar solo para administradores.
-      </p>
+      <h1 className="text-2xl font-bold text-foreground">Personalización de Sidebar</h1>
+      <p className="text-muted-foreground">Configura tu color de sidebar personal.</p>
 
       <div className="p-6 bg-card text-card-foreground rounded-xl shadow border border-border space-y-4">
-        {/* Presets */}
         <div className="flex flex-wrap gap-4">
           {presetColors.map((opt) => (
             <button
@@ -179,7 +195,6 @@ export default function AdminSettingsPage() {
             </button>
           ))}
 
-          {/* Custom */}
           <div className="relative w-10 h-10">
             <input
               type="color"
@@ -192,17 +207,11 @@ export default function AdminSettingsPage() {
               className={`w-10 h-10 rounded-full border ${
                 color === 'custom' ? 'ring-2 ring-primary' : 'border-border'
               }`}
-              style={{
-                background:
-                  color === 'custom'
-                    ? customColor
-                    : 'linear-gradient(45deg, #f00, #0f0, #00f, #ff0, #0ff, #f0f)',
-              }}
+              style={{ background: customColor }}
             />
           </div>
         </div>
 
-        {/* Luminosidad */}
         <div className="mt-4 flex items-center gap-4">
           <div className="flex-1">
             <label className="block text-sm font-medium text-foreground">Ajustar luminosidad</label>

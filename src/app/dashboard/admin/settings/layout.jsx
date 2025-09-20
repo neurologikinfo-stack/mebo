@@ -3,14 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
-
-export const tabs = [
-  { name: 'UI', href: '/dashboard/admin/settings/ui' },
-  { name: 'Personalización', href: '/dashboard/admin/settings/customization' },
-]
-
-// 👇 Exportamos también cuál es la tab default
-export const defaultTab = '/dashboard/admin/settings/customization'
+import { tabs, defaultTab } from './tabs'
 
 export default function SettingsLayout({ children }) {
   const pathname = usePathname()
