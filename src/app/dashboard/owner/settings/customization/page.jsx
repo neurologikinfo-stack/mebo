@@ -29,7 +29,6 @@ function hexToHsl(hex) {
   const min = Math.min(r, g, b)
   let h, s
   let l = (max + min) / 2
-
   if (max === min) {
     h = s = 0
   } else {
@@ -92,19 +91,19 @@ function hexToRgbString(hex) {
   return `${r} ${g} ${b}`
 }
 
-export default function AdminSettingsPage() {
+export default function OwnerSettingsPage() {
   const { setColor } = useSidebarColor()
   const { user } = useUser()
 
   const clerkId = user?.id
-  const role = user?.publicMetadata?.role || 'customer'
+  const role = user?.publicMetadata?.role || 'owner'
 
-  const [color, setColorValue] = useState('preset:azul')
-  const [customColor, setCustomColor] = useState('#2563eb')
+  const [color, setColorValue] = useState(null)
+  const [customColor, setCustomColor] = useState(null)
   const [adjustment, setAdjustment] = useState(0)
   const [range, setRange] = useState({ min: 0.1, max: 0.9 })
+  const [isLoaded, setIsLoaded] = useState(false)
 
-  // --- Load from DB
   useEffect(() => {
     if (!clerkId) return
     async function fetchColor() {
@@ -113,16 +112,13 @@ export default function AdminSettingsPage() {
         const data = await res.json()
 
         if (data.value) {
-          let base = data.value
-          if (!base.startsWith('#')) {
-            const preset = presetColors.find((c) => c.value === base)
-            base = preset?.hex || '#2563eb'
-            setColorValue(data.value)
+          if (!data.value.startsWith('#')) {
+            const preset = presetColors.find((c) => c.value === data.value)
+            if (preset) setColorValue(data.value)
           } else {
             setColorValue('custom')
-            setCustomColor(base)
+            setCustomColor(data.value)
           }
-
           setRange({
             min: data.min_luminosity || 0.1,
             max: data.max_luminosity || 0.9,
@@ -130,23 +126,26 @@ export default function AdminSettingsPage() {
         }
       } catch (err) {
         console.error('❌ Error leyendo color:', err)
+      } finally {
+        setIsLoaded(true)
       }
     }
     fetchColor()
   }, [clerkId])
 
-  // --- Base color y preview
   const baseColor =
-    color === 'custom' ? customColor : presetColors.find((c) => c.value === color)?.hex || '#2563eb'
-  const previewColor = adjustColor(baseColor, adjustment, range.min, range.max)
+    color === 'custom' ? customColor : presetColors.find((c) => c.value === color)?.hex || null
+  const previewColor = baseColor ? adjustColor(baseColor, adjustment, range.min, range.max) : null
 
-  // --- Aplica al sidebar en tiempo real
+  // ⚡️ Solo aplicamos al sidebar cuando ya cargó
   useEffect(() => {
-    setColor(hexToRgbString(previewColor))
-  }, [previewColor, setColor])
+    if (isLoaded && previewColor) {
+      setColor(hexToRgbString(previewColor))
+    }
+  }, [previewColor, setColor, isLoaded])
 
-  // --- Save via API (Service Role Key)
   async function handleSave() {
+    if (!previewColor) return
     try {
       const res = await fetch('/api/settings/save', {
         method: 'POST',
@@ -154,7 +153,7 @@ export default function AdminSettingsPage() {
         body: JSON.stringify({
           clerk_id: clerkId,
           role,
-          value: previewColor,
+          value: color === 'custom' ? customColor : color,
           min_luminosity: range.min,
           max_luminosity: range.max,
         }),
@@ -170,49 +169,70 @@ export default function AdminSettingsPage() {
     }
   }
 
+  if (!isLoaded) return null
+
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-foreground">Personalización de Sidebar</h1>
+      <h1 className="text-2xl font-bold text-foreground">Personalización de Sidebar (Owner)</h1>
       <p className="text-muted-foreground">Configura tu color de sidebar personal.</p>
 
       <div className="p-6 bg-card text-card-foreground rounded-xl shadow border border-border space-y-4">
         <div className="flex flex-wrap gap-4">
-          {presetColors.map((opt) => (
-            <button
-              key={opt.value}
-              onClick={() => setColorValue(opt.value)}
-              className={`relative w-10 h-10 rounded-full border ${
-                color === opt.value ? 'ring-2 ring-primary' : 'border-border'
-              }`}
-              style={{
-                backgroundColor: opt.hex,
-                borderColor: opt.value === 'preset:blanco' ? '#ccc' : undefined,
-              }}
-            >
-              {color === opt.value && (
-                <Check className="absolute inset-0 m-auto h-5 w-5 text-white dark:text-black" />
-              )}
-            </button>
-          ))}
+          {presetColors.map((opt) => {
+            const isSelected = color === opt.value
+            return (
+              <button
+                key={opt.value}
+                onClick={() => setColorValue(opt.value)}
+                className={`relative w-10 h-10 rounded-full border ${
+                  isSelected ? 'ring-2 ring-primary' : 'border-border'
+                }`}
+                style={{
+                  backgroundColor: opt.hex,
+                  borderColor: opt.value === 'preset:blanco' ? '#ccc' : undefined,
+                }}
+              >
+                {isSelected && (
+                  <Check
+                    className="absolute inset-0 m-auto h-5 w-5"
+                    style={{ color: opt.hex === '#ffffff' ? 'black' : 'white' }}
+                  />
+                )}
+              </button>
+            )
+          })}
 
-          <div className="relative w-10 h-10">
+          {/* Custom */}
+          <div
+            className={`relative w-10 h-10 rounded-full border cursor-pointer ${
+              color === 'custom' ? 'ring-2 ring-primary' : 'border-border'
+            }`}
+            onClick={() => setColorValue('custom')}
+          >
             <input
               type="color"
-              value={customColor}
-              onChange={(e) => setCustomColor(e.target.value)}
-              onClick={() => setColorValue('custom')}
+              value={customColor || '#ffffff'}
+              onChange={(e) => {
+                setCustomColor(e.target.value)
+                setColorValue('custom')
+              }}
               className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
             />
             <div
-              className={`w-10 h-10 rounded-full border ${
-                color === 'custom' ? 'ring-2 ring-primary' : 'border-border'
-              }`}
+              className="w-full h-full rounded-full"
               style={{
-                // Gradiente multicolor para custom
                 background:
-                  'linear-gradient(45deg, #ff0000, #ff9900, #ffff00, #00ff00, #00ffff, #0000ff, #9900ff, #ff00ff)',
+                  color === 'custom' && customColor
+                    ? customColor
+                    : 'linear-gradient(45deg, red, orange, yellow, green, cyan, blue, purple, magenta)',
               }}
             />
+            {color === 'custom' && (
+              <Check
+                className="absolute inset-0 m-auto h-5 w-5"
+                style={{ color: customColor === '#ffffff' ? 'black' : 'white' }}
+              />
+            )}
           </div>
         </div>
 
@@ -232,7 +252,7 @@ export default function AdminSettingsPage() {
           </div>
           <div
             className="w-10 h-10 rounded-full border"
-            style={{ backgroundColor: previewColor }}
+            style={{ backgroundColor: previewColor || '#fff' }}
           />
         </div>
 
