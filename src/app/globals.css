@@ -15,8 +15,8 @@
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 47.4% 11.2%;
 
-    /* 👇 Fallback neutro inicial (gris) */
-    --primary: 31 41 55; /* gris neutro (#1f2937) */
+    /* 👇 Fallback neutro inicial: transparente */
+    --primary: 0 0 0 / 0;
     --primary-foreground: 255 255 255;
 
     --secondary: 210 40% 96.1%;
@@ -33,7 +33,9 @@
 
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 31 41 55; /* mismo gris que primary */
+
+    /* 👇 También transparente */
+    --ring: 0 0 0 / 0;
 
     --radius: 0.5rem;
   }
@@ -48,8 +50,8 @@
     --popover: 222.2 47.4% 11.2%;
     --popover-foreground: 210 40% 98%;
 
-    /* 👇 Fallback neutro en dark también gris */
-    --primary: 31 41 55; /* gris neutro (#1f2937) */
+    /* 👇 Fallback neutro en dark: transparente */
+    --primary: 0 0 0 / 0;
     --primary-foreground: 255 255 255;
 
     --secondary: 217.2 32.6% 17.5%;
@@ -66,7 +68,9 @@
 
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
-    --ring: 31 41 55; /* mismo gris que primary */
+
+    /* 👇 También transparente */
+    --ring: 0 0 0 / 0;
   }
 }
 
