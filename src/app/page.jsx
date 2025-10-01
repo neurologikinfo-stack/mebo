@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useUser } from '@clerk/nextjs'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/utils/supabase/client'
@@ -9,15 +9,7 @@ import { supabase } from '@/utils/supabase/client'
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuItem,
-} from '@/components/ui/dropdown-menu'
 import { Skeleton } from '@/components/ui/skeleton'
-
-const PAGE_SIZE = 9
 
 export default function Home() {
   const { isLoaded, isSignedIn, user } = useUser()
@@ -30,13 +22,7 @@ export default function Home() {
   const [err, setErr] = useState('')
   const [q, setQ] = useState('')
   const [sort, setSort] = useState('created_desc')
-  const [page, setPage] = useState(1)
-  const [total, setTotal] = useState(0)
   const [syncMsg, setSyncMsg] = useState('')
-
-  useEffect(() => {
-    setPage(1)
-  }, [q, sort])
 
   useEffect(() => {
     ;(async () => {
@@ -45,9 +31,7 @@ export default function Home() {
 
       let query = supabase
         .from('businesses')
-        .select('id,name,slug,phone,email,created_at,description,created_by,logo_url', {
-          count: 'exact',
-        })
+        .select('id,name,slug,phone,email,created_at,description,created_by,logo_url')
 
       const term = q.trim()
       if (term) {
@@ -58,34 +42,17 @@ export default function Home() {
       else if (sort === 'created_asc') query = query.order('created_at', { ascending: true })
       else query = query.order('created_at', { ascending: false })
 
-      const from = (page - 1) * PAGE_SIZE
-      const to = from + PAGE_SIZE - 1
-      query = query.range(from, to)
-
-      const { data, error, count } = await query
+      const { data, error } = await query
 
       if (error) {
         setErr(error.message || 'No se pudieron cargar los negocios.')
         setBusinesses([])
-        setTotal(0)
       } else {
         setBusinesses(Array.isArray(data) ? data : [])
-        setTotal(typeof count === 'number' ? count : 0)
       }
       setLoading(false)
     })()
-  }, [page, q, sort])
-
-  const canPrev = page > 1
-  const maxPage = Math.max(1, Math.ceil(total / PAGE_SIZE))
-  const canNext = page < maxPage
-
-  const showingRange = useMemo(() => {
-    if (total === 0) return 'Mostrando 0 de 0'
-    const start = (page - 1) * PAGE_SIZE + 1
-    const end = Math.min(page * PAGE_SIZE, total)
-    return `Mostrando ${start}–${end} de ${total}`
-  }, [page, total])
+  }, [q, sort])
 
   async function handleSync() {
     setSyncMsg('Sincronizando...')
@@ -103,9 +70,9 @@ export default function Home() {
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">Negocios</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">Todos los Negocios</h1>
           <p className="text-sm text-muted-foreground">
-            Listado desde tu base de datos en Supabase.
+            Listado completo desde tu base de datos en Supabase.
           </p>
         </div>
         {isLoaded && isSignedIn && isAdmin && (
@@ -124,93 +91,77 @@ export default function Home() {
       <section>
         {loading ? (
           <SkeletonGrid />
-        ) : total === 0 ? (
+        ) : businesses.length === 0 ? (
           <EmptyState hasQuery={!!q} clear={() => setQ('')} />
         ) : (
-          <>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {businesses.map((b) => (
-                <Card
-                  key={b.id}
-                  className="cursor-pointer hover:shadow-md transition"
-                  onClick={() => router.push(`/business/${b.slug}`)}
-                >
-                  <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        {b.logo_url ? (
-                          <img
-                            src={b.logo_url}
-                            alt={b.name}
-                            className="h-10 w-10 rounded-full object-cover border"
-                          />
-                        ) : (
-                          <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 font-medium">
-                            {b.name?.charAt(0).toUpperCase()}
-                          </div>
-                        )}
-                        <CardTitle className="line-clamp-1">{b.name || 'Sin nombre'}</CardTitle>
-                      </div>
-                      <Badge variant="outline">{formatDate(b.created_at)}</Badge>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {businesses.map((b) => (
+              <Card
+                key={b.id}
+                className="cursor-pointer hover:shadow-md transition"
+                onClick={() => router.push(`/business/${b.slug}`)}
+              >
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      {b.logo_url ? (
+                        <img
+                          src={b.logo_url}
+                          alt={b.name}
+                          className="h-10 w-10 rounded-full object-cover border"
+                        />
+                      ) : (
+                        <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 font-medium">
+                          {b.name?.charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                      <CardTitle className="line-clamp-1">{b.name || 'Sin nombre'}</CardTitle>
                     </div>
-                    <p className="text-xs text-muted-foreground">@{b.slug}</p>
-                  </CardHeader>
+                    <Badge variant="outline">{formatDate(b.created_at)}</Badge>
+                  </div>
+                  <p className="text-xs text-muted-foreground">@{b.slug}</p>
+                </CardHeader>
 
-                  <CardContent>
-                    {b.description && (
-                      <p className="line-clamp-2 text-sm text-muted-foreground mb-2">
-                        {b.description}
-                      </p>
-                    )}
-                    <div className="space-y-1 text-sm text-muted-foreground">
-                      {b.phone && <p>📞 {b.phone}</p>}
-                      {b.email && <p>✉️ {b.email}</p>}
-                    </div>
-                  </CardContent>
+                <CardContent>
+                  {b.description && (
+                    <p className="line-clamp-2 text-sm text-muted-foreground mb-2">
+                      {b.description}
+                    </p>
+                  )}
+                  <div className="space-y-1 text-sm text-muted-foreground">
+                    {b.phone && <p>📞 {b.phone}</p>}
+                    {b.email && <p>✉️ {b.email}</p>}
+                  </div>
+                </CardContent>
 
-                  <CardFooter className="flex justify-between">
-                    {/* Si es admin o creador → mostrar acciones */}
-                    {isAdmin || b.created_by === userId ? (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          router.push(`/dashboard/admin/businesses/${b.id}/edit`)
-                        }}
-                      >
-                        Editar
-                      </Button>
-                    ) : (
-                      <Button
-                        size="sm"
-                        className="bg-blue-600 text-white hover:bg-blue-500"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          router.push(`/${b.slug}/book`)
-                        }}
-                      >
-                        Book
-                      </Button>
-                    )}
-                  </CardFooter>
-                </Card>
-              ))}
-            </div>
-
-            {/* Paginador */}
-            <div className="mt-8 flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">{showingRange}</span>
-              <Pager
-                page={page}
-                maxPage={maxPage}
-                canPrev={canPrev}
-                canNext={canNext}
-                onPrev={() => canPrev && setPage((p) => p - 1)}
-                onNext={() => canNext && setPage((p) => p + 1)}
-              />
-            </div>
-          </>
+                <CardFooter className="flex justify-between">
+                  {isAdmin || b.created_by === userId ? (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        router.push(`/dashboard/admin/businesses/${b.id}/edit`)
+                      }}
+                    >
+                      Editar
+                    </Button>
+                  ) : (
+                    <Button
+                      size="sm"
+                      className="bg-blue-600 text-white hover:bg-blue-500"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        router.push(`/${b.slug}/book`)
+                      }}
+                    >
+                      Book
+                    </Button>
+                  )}
+                </CardFooter>
+              </Card>
+            ))}
+          </div>
         )}
       </section>
     </main>
@@ -280,21 +231,5 @@ function EmptyState({ hasQuery, clear }) {
         </div>
       </CardContent>
     </Card>
-  )
-}
-
-function Pager({ page, maxPage, canPrev, canNext, onPrev, onNext }) {
-  return (
-    <div className="flex items-center gap-2">
-      <Button onClick={onPrev} disabled={!canPrev} variant="outline" size="sm">
-        ← Anterior
-      </Button>
-      <span className="text-sm text-muted-foreground">
-        Página {page} / {maxPage}
-      </span>
-      <Button onClick={onNext} disabled={!canNext} variant="outline" size="sm">
-        Siguiente →
-      </Button>
-    </div>
   )
 }

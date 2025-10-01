@@ -106,6 +106,19 @@ export default function OwnerSettingsPage() {
 
   useEffect(() => {
     if (!clerkId) return
+
+    // 🔹 1. Leer de localStorage antes de fetch
+    const stored = localStorage.getItem(`sidebar-color-${role}`)
+    if (stored) {
+      if (!stored.startsWith('#')) {
+        setColorValue(stored)
+      } else {
+        setColorValue('custom')
+        setCustomColor(stored)
+      }
+      setColor(hexToRgbString(stored.startsWith('#') ? stored : presetColors[stored]))
+    }
+
     async function fetchColor() {
       try {
         const res = await fetch(`/api/settings/fetch?clerk_id=${clerkId}`)
@@ -113,16 +126,12 @@ export default function OwnerSettingsPage() {
 
         if (data.value) {
           if (!data.value.startsWith('#')) {
-            const preset = presetColors.find((c) => c.value === data.value)
-            if (preset) setColorValue(data.value)
+            setColorValue(data.value)
           } else {
             setColorValue('custom')
             setCustomColor(data.value)
           }
-          setRange({
-            min: data.min_luminosity || 0.1,
-            max: data.max_luminosity || 0.9,
-          })
+          localStorage.setItem(`sidebar-color-${role}`, data.value)
         }
       } catch (err) {
         console.error('❌ Error leyendo color:', err)
@@ -130,30 +139,34 @@ export default function OwnerSettingsPage() {
         setIsLoaded(true)
       }
     }
+
     fetchColor()
-  }, [clerkId])
+  }, [clerkId, role, setColor])
 
   const baseColor =
     color === 'custom' ? customColor : presetColors.find((c) => c.value === color)?.hex || null
   const previewColor = baseColor ? adjustColor(baseColor, adjustment, range.min, range.max) : null
 
-  // ⚡️ Solo aplicamos al sidebar cuando ya cargó
   useEffect(() => {
     if (isLoaded && previewColor) {
       setColor(hexToRgbString(previewColor))
     }
-  }, [previewColor, setColor, isLoaded])
+  }, [isLoaded, previewColor, setColor])
 
   async function handleSave() {
     if (!previewColor) return
     try {
+      const newValue = color === 'custom' ? customColor : color
+      setColor(hexToRgbString(previewColor))
+      localStorage.setItem(`sidebar-color-${role}`, newValue)
+
       const res = await fetch('/api/settings/save', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           clerk_id: clerkId,
           role,
-          value: color === 'custom' ? customColor : color,
+          value: newValue,
           min_luminosity: range.min,
           max_luminosity: range.max,
         }),
@@ -161,7 +174,6 @@ export default function OwnerSettingsPage() {
 
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Error desconocido')
-
       alert('✅ Color del sidebar actualizado')
     } catch (err) {
       console.error('❌ Error guardando color:', err)

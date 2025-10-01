@@ -8,11 +8,9 @@ const supabase = createClient(
 )
 
 // 🔹 GET: obtener un perfil desde Supabase (si no existe, lo crea)
-export async function GET(req, context) {
+export async function GET(req, { params }) {
   try {
-    const { params } = await context
     const clerkId = params?.clerk_id
-
     if (!clerkId) {
       return NextResponse.json({ ok: false, error: 'Falta clerk_id' }, { status: 400 })
     }
@@ -50,7 +48,6 @@ export async function GET(req, context) {
         .maybeSingle()
 
       if (insertErr) throw insertErr
-
       return NextResponse.json({ ok: true, data: inserted })
     }
 
@@ -62,11 +59,9 @@ export async function GET(req, context) {
 }
 
 // 🔹 PATCH: actualizar un perfil en Supabase y sincronizar con Clerk
-export async function PATCH(req, context) {
+export async function PATCH(req, { params }) {
   try {
-    const { params } = await context
     const clerkId = params?.clerk_id
-
     if (!clerkId) {
       return NextResponse.json({ ok: false, error: 'Falta clerk_id' }, { status: 400 })
     }
@@ -82,7 +77,6 @@ export async function PATCH(req, context) {
       .maybeSingle()
 
     if (fetchErr) throw fetchErr
-
     let profileData = existing
 
     // --- 2. Si no existe, lo creamos
@@ -135,12 +129,10 @@ export async function PATCH(req, context) {
     // --- 4. Sincronizar con Clerk
     try {
       const currentClerkUser = await clerkClient.users.getUser(decodedClerkId)
-
       const fullNameForClerk =
         updates.full_name || data.full_name || currentClerkUser.fullName || ''
       const [firstName, ...rest] = fullNameForClerk.split(' ')
       const lastName = rest.join(' ') || null
-
       const finalImageUrl =
         updates.avatar_url || data.avatar_url || currentClerkUser.imageUrl || null
 

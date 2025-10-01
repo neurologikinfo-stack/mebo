@@ -15,8 +15,8 @@
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 47.4% 11.2%;
 
-    /* 👇 Primary en formato RGB tripleta */
-    --primary: 37 99 235; /* azul Tailwind (#2563eb) */
+    /* 👇 Fallback neutro inicial (gris) */
+    --primary: 31 41 55; /* gris neutro (#1f2937) */
     --primary-foreground: 255 255 255;
 
     --secondary: 210 40% 96.1%;
@@ -33,7 +33,7 @@
 
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 37 99 235;
+    --ring: 31 41 55; /* mismo gris que primary */
 
     --radius: 0.5rem;
   }
@@ -48,9 +48,9 @@
     --popover: 222.2 47.4% 11.2%;
     --popover-foreground: 210 40% 98%;
 
-    /* 👇 Fallback en modo dark */
-    --primary: 255 255 255;
-    --primary-foreground: 0 0 0;
+    /* 👇 Fallback neutro en dark también gris */
+    --primary: 31 41 55; /* gris neutro (#1f2937) */
+    --primary-foreground: 255 255 255;
 
     --secondary: 217.2 32.6% 17.5%;
     --secondary-foreground: 210 40% 98%;
@@ -66,7 +66,7 @@
 
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
-    --ring: 203 213 225;
+    --ring: 31 41 55; /* mismo gris que primary */
   }
 }
 
@@ -76,7 +76,6 @@
     @apply border-border;
   }
 
-  /* 🔥 Elimina margen/padding por defecto del navegador */
   html,
   body {
     @apply m-0 p-0;
@@ -86,7 +85,6 @@
     @apply bg-background text-foreground;
   }
 }
-
 /* ======================= */
 /* 📅 Estilos para DayPicker */
 /* ======================= */

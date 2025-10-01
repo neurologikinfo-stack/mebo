@@ -111,7 +111,7 @@ export default function CustomerSettingsPage() {
         const res = await fetch(`/api/settings/fetch?clerk_id=${clerkId}`)
         const data = await res.json()
 
-        if (data.value) {
+        if (data.value && !color) {
           if (!data.value.startsWith('#')) {
             const preset = presetColors.find((c) => c.value === data.value)
             if (preset) setColorValue(data.value)
@@ -131,29 +131,36 @@ export default function CustomerSettingsPage() {
       }
     }
     fetchColor()
-  }, [clerkId])
+  }, [clerkId, color])
 
   const baseColor =
     color === 'custom' ? customColor : presetColors.find((c) => c.value === color)?.hex || null
   const previewColor = baseColor ? adjustColor(baseColor, adjustment, range.min, range.max) : null
 
-  // ⚡️ Solo aplicamos cuando ya está cargado
+  // ⚡️ Aplicamos el color al sidebar solo después de que cargue
   useEffect(() => {
     if (isLoaded && previewColor) {
       setColor(hexToRgbString(previewColor))
     }
-  }, [previewColor, setColor, isLoaded])
+  }, [isLoaded, previewColor, setColor])
 
   async function handleSave() {
     if (!previewColor) return
     try {
+      const newValue = color === 'custom' ? customColor : color
+
+      // 👇 Optimistic update al instante y persistencia correcta
+      setColor(hexToRgbString(previewColor))
+      setColorValue(newValue)
+      localStorage.setItem(`sidebar-color-${role}`, newValue)
+
       const res = await fetch('/api/settings/save', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           clerk_id: clerkId,
           role,
-          value: color === 'custom' ? customColor : color,
+          value: newValue,
           min_luminosity: range.min,
           max_luminosity: range.max,
         }),

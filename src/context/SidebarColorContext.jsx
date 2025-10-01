@@ -55,7 +55,8 @@ function getContrastYIQ(hexOrRgb) {
 const SidebarColorContext = createContext(undefined)
 
 export function SidebarColorProvider({ role, children }) {
-  const [color, setColor] = useState(null)
+  // 👇 Inicializamos con gris neutro para evitar flash rojo
+  const [color, setColor] = useState('preset:gris')
   const [loading, setLoading] = useState(true)
 
   function applyBrandColor(value) {
@@ -72,18 +73,19 @@ export function SidebarColorProvider({ role, children }) {
 
     const contrast = getContrastYIQ(rgb)
 
-    // 👇 Debug temporal
-    console.log('🎨 Aplicando color Sidebar:', {
-      input: value,
-      rgb,
-      contrast,
-    })
-
     document.documentElement.style.setProperty('--primary', rgb)
     document.documentElement.style.setProperty('--primary-foreground', contrast)
   }
 
+  // ⚡️ aplicar el color inicial (gris) al montar
   useEffect(() => {
+    applyBrandColor(color)
+  }, [])
+
+  useEffect(() => {
+    // guardamos siempre el role actual para que el script en RootLayout lo lea
+    localStorage.setItem('user-role', role)
+
     const stored = localStorage.getItem(`sidebar-color-${role}`)
     if (stored) {
       setColor(stored)
