@@ -1,8 +1,38 @@
 {
-  "files.exclude": {
-    "**/.next": true
+  // ==== EDITOR ====
+  "editor.formatOnSave": true,
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "always",
+    "source.organizeImports": "always"
   },
-  "search.exclude": {
-    "**/.next": true
-  }
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+
+  // ==== FILES ====
+  "files.associations": {
+    "*.css": "tailwindcss"
+  },
+  "files.eol": "\n",
+  "files.insertFinalNewline": true,
+
+  // ==== TAILWIND CSS ====
+  "tailwindCSS.includeLanguages": {
+    "javascript": "tailwindcss",
+    "javascriptreact": "tailwindcss",
+    "typescript": "tailwindcss",
+    "typescriptreact": "tailwindcss",
+    "css": "tailwindcss",
+    "postcss": "tailwindcss"
+  },
+  "tailwindCSS.experimental.configFile": "./tailwind.config.js",
+
+  // ==== ESLINT ====
+  "eslint.enable": true,
+  "eslint.validate": ["javascript", "javascriptreact", "typescript", "typescriptreact"],
+
+  // ==== PRETTIER ====
+  "prettier.singleQuote": true,
+  "prettier.semi": false,
+  "prettier.trailingComma": "es5",
+  "prettier.printWidth": 100,
+  "prettier.tabWidth": 2
 }
